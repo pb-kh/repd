@@ -1,0 +1,10 @@
+[wrap-file]
+# LuaJIT v2.1 rolling branch, pinned to an exact commit (research R2).
+directory = LuaJIT-c6ffc141a8762b41703f9287d63d93622a13dd8f
+source_url = https://github.com/LuaJIT/LuaJIT/archive/c6ffc141a8762b41703f9287d63d93622a13dd8f.tar.gz
+source_filename = LuaJIT-c6ffc141a8762b41703f9287d63d93622a13dd8f.tar.gz
+source_hash = 6e5fec07750add912e7c3eae0c194d24cd6d023714e1f04a0298a5b4819e4457
+patch_directory = luajit
+
+[provide]
+luajit = luajit_dep

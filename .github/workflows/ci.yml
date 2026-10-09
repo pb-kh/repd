@@ -1,0 +1,36 @@
+# CI matrix (Constitution III/IV, task T168): latest GCC and Clang on Arch,
+# warnings as errors, all three test suites, formatting gate.
+name: ci
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [gcc, clang]
+    steps:
+      - run: pacman -Syu --noconfirm --needed base-devel git meson ninja python clang
+      - uses: actions/checkout@v4
+      - name: Fetch pinned subprojects (hash-verified)
+        run: meson subprojects download
+      - name: Configure (hermetic, no network)
+        env:
+          CC: ${{ matrix.compiler == 'clang' && 'clang' || 'gcc' }}
+          CXX: ${{ matrix.compiler == 'clang' && 'clang++' || 'g++' }}
+        run: meson setup build --wrap-mode=nodownload -Dtest_hooks=true -Dwerror=true
+      - run: meson compile -C build
+      - run: meson test -C build --suite unit --print-errorlogs
+      - run: meson test -C build --suite lua --print-errorlogs
+      - name: Integration (unprivileged, sandboxed)
+        run: |
+          useradd -m tester && chown -R tester .
+          su tester -c 'meson test -C build --suite integration --print-errorlogs'
+      - name: Formatting gate
+        if: matrix.compiler == 'clang'
+        run: ninja -C build clang-format-check
+      - name: Release build (test hooks compiled out)
+        run: |
+          meson setup build-rel --wrap-mode=nodownload --buildtype=release -Dtest_hooks=false -Dwerror=true
+          meson compile -C build-rel

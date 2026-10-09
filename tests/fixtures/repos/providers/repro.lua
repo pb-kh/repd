@@ -1,0 +1,1 @@
+-- US2 fixture: no profiles; modules are named on the command line.

@@ -1,0 +1,21 @@
+# Build trees
+/build*/
+builddir/
+# Meson subproject checkouts and download cache (wraps + overlays are tracked)
+/subprojects/*/
+!/subprojects/packagefiles/
+/subprojects/packagecache/
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+# Editors / OS
+.DS_Store
+Thumbs.db
+*.tmp
+*.swp
+.vscode/
+.idea/
+*.log
+.env*

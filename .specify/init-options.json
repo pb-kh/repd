@@ -1,9 +1,10 @@
 {
-  "ai": "opencode",
+  "ai": "claude",
+  "ai_skills": true,
   "branch_numbering": "sequential",
-  "context_file": "AGENTS.md",
+  "context_file": "CLAUDE.md",
   "here": true,
-  "integration": "opencode",
+  "integration": "claude",
   "script": "sh",
   "speckit_version": "0.8.18"
 }

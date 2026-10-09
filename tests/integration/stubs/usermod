@@ -1,0 +1,25 @@
+#!/bin/sh
+# Test stub: logs the call and emulates usermod (-s SHELL, -a -G GROUPS) inside $REPRO_SYSROOT.
+set -eu
+echo "usermod $*" >> "$REPRO_SYSROOT/stub.log"
+shell="" groups=""
+while [ $# -gt 1 ]; do
+  case "$1" in
+    -a) shift ;;
+    -s) shell="$2"; shift 2 ;;
+    -G) groups="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+name="$1"
+p="$REPRO_SYSROOT/etc/passwd" g="$REPRO_SYSROOT/etc/group"
+touch "$p" "$g"
+grep -q "^$name:" "$p" || { echo "usermod: user '$name' does not exist" >&2; exit 6; }
+if [ -n "$shell" ]; then
+  awk -F: -v OFS=: -v n="$name" -v s="$shell" '$1==n{$7=s}1' "$p" > "$p.tmp" && mv "$p.tmp" "$p"
+fi
+for grp in $(echo "$groups" | tr ',' ' '); do
+  grep -q "^$grp:" "$g" || echo "$grp:x:3000:" >> "$g"
+  awk -F: -v OFS=: -v grp="$grp" -v n="$name" '$1==grp{ if ($4=="") $4=n; else if (index(","$4",", ","n",")==0) $4=$4","n }1' "$g" > "$g.tmp" && mv "$g.tmp" "$g"
+done
+exit 0

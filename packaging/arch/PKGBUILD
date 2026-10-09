@@ -1,0 +1,79 @@
+# Maintainer: repro developers
+# Split package: the core binary and the first-party backend add-ons ship
+# separately (research R17); the core works with zero add-ons.
+pkgbase=repro
+pkgname=(repro repro-pacman repro-systemd repro-openrc repro-yay repro-flatpak)
+pkgver=0.1.0
+pkgrel=1
+pkgdesc='Declarative, reproducible environment configuration in Lua'
+arch=(x86_64 aarch64)
+url='https://example.invalid/repro'
+license=(MIT)
+makedepends=(meson ninja python)
+source=("repro-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+  cd "repro-$pkgver"
+  meson subprojects download
+  arch-meson build --wrap-mode=nodownload -Dtest_hooks=false -Daddons=enabled -Dplugin_dir=/usr/lib/repro
+  meson compile -C build
+}
+
+check() {
+  cd "repro-$pkgver"
+  meson test -C build --suite unit --suite lua
+}
+
+_install_into() {
+  cd "$srcdir/repro-$pkgver"
+  DESTDIR="$srcdir/staging" meson install -C build --no-rebuild >/dev/null
+}
+
+package_repro() {
+  depends=(glibc)
+  optdepends=('repro-pacman: package management via pacman'
+              'repro-systemd: service management via systemd'
+              'repro-openrc: service management via OpenRC'
+              'repro-yay: repo and AUR packages via yay'
+              'repro-flatpak: flatpak apps, system-wide and per user')
+  _install_into
+  install -Dm755 "$srcdir/staging/usr/bin/repro" "$pkgdir/usr/bin/repro"
+  install -Dm644 "$srcdir/staging/usr/include/repro/plugin.h" "$pkgdir/usr/include/repro/plugin.h"
+  install -Dm644 docs/lua-api.md "$pkgdir/usr/share/doc/repro/lua-api.md"
+}
+
+package_repro-pacman() {
+  pkgdesc='repro packages backend for pacman'
+  depends=(repro pacman)
+  _install_into
+  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-pacman.so" "$pkgdir/usr/lib/repro/librepro-pacman.so"
+}
+
+package_repro-systemd() {
+  pkgdesc='repro services backend for systemd'
+  depends=(repro systemd)
+  _install_into
+  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-systemd.so" "$pkgdir/usr/lib/repro/librepro-systemd.so"
+}
+
+package_repro-openrc() {
+  pkgdesc='repro services backend for OpenRC'
+  depends=(repro openrc)
+  _install_into
+  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-openrc.so" "$pkgdir/usr/lib/repro/librepro-openrc.so"
+}
+
+package_repro-yay() {
+  pkgdesc='repro packages backend for yay (repo and AUR packages)'
+  depends=(repro yay)
+  _install_into
+  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-yay.so" "$pkgdir/usr/lib/repro/librepro-yay.so"
+}
+
+package_repro-flatpak() {
+  pkgdesc='repro packages backends for flatpak (system and per-user installations)'
+  depends=(repro flatpak)
+  _install_into
+  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-flatpak.so" "$pkgdir/usr/lib/repro/librepro-flatpak.so"
+}

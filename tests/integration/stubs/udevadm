@@ -1,0 +1,4 @@
+#!/bin/sh
+# Test stub: records the invocation instead of touching the live system.
+echo "udevadm $*" >> "$REPRO_SYSROOT/stub.log"
+exit 0

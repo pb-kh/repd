@@ -1,0 +1,6 @@
+option('test_hooks', type: 'boolean', value: false,
+  description: 'Compile in REPRO_SYSROOT / REPRO_TEST_ASSUME_ROOT hooks (dev/CI builds only)')
+option('plugin_dir', type: 'string', value: '/usr/lib/repro',
+  description: 'System directory searched for librepro-<name>.so backend plugins (e.g. /usr/lib64/repro on Fedora)')
+option('addons', type: 'feature', value: 'auto',
+  description: 'Build the first-party backend add-ons (pacman, systemd)')
