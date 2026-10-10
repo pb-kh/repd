@@ -84,6 +84,23 @@ rp.option("packages.backend", "pacman")          -- repro.lua
 packages = { "neovim", "yay:paru-bin", "flatpak:org.mozilla.firefox" }
 ```
 
+**One install per backend**: repro collects the packages of all modules in the
+run and installs them through each backend in one go (one `pacman -S`, one
+`yay -S`, …), in the plan under the first module that uses the backend and
+listing the modules it installs for:
+
+```
+  apps/browser/firefox 1 for system pass
+    · packages pacman: install firefox, helium-browser, mpv, …  (for apps/browser/firefox, apps/media, …)  [system pass]
+```
+
+`requires` still holds: a module whose dependencies have other steps in the
+same pass (files, services, actions, …) after that point gets a new install
+there, so e.g. `pacman.conf` is written before packages from the repository it
+adds. A package two modules declare is installed once and recorded for the
+first of them; `repro status` shows a module pending while one of its packages
+is missing, whichever module's install carries it.
+
 Installing never refreshes the package databases first (on Arch that would be
 a partial upgrade). Run `repro sync --upgrade` to fully upgrade each packages
 backend in use (`pacman -Syu`, `yay -Syu`, …) before its installs; the upgrade

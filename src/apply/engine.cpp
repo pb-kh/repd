@@ -82,8 +82,19 @@ ApplyResult apply_plan(Plan& plan, ApplyContext& actx, CheckContext& cctx, Ledge
         if (auto r = ledger.upsert_managed_file(*outcome->managed); !r) return r;
       }
       if (outcome != nullptr && !outcome->packages.empty()) {
-        if (auto r = ledger.insert_managed_packages(outcome->backend, outcome->packages, s.module, *run); !r) {
-          return r;
+        // A batch installs for several modules: record each package for the module declaring it.
+        std::map<std::string, std::vector<std::string>> by_module;
+        const auto* d = std::get_if<PackagesDesired>(&s.desired);
+        for (const auto& n : outcome->packages) {
+          std::string module = s.module;
+          if (d != nullptr) {
+            if (auto it = d->owners.find(n); it != d->owners.end()) module = it->second;
+          }
+          by_module[module].push_back(n);
+        }
+        for (const auto& [module, names] : by_module) {
+          if (auto r = ledger.insert_managed_packages(outcome->backend, names, module, *run); !r)
+            return r;
         }
       }
       return {};

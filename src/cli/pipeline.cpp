@@ -544,15 +544,20 @@ Result<PlanOutput> make_plan(Session& s, const PlanRequest& req, const Ledger* l
   }
   auto upgrades = plan_upgrades(s, req, plan);
   if (!upgrades) return std::unexpected(upgrades.error());
+  std::vector<std::pair<std::string, std::vector<Step>>> module_steps;
   for (const auto& name : plan.selected) {
     auto steps = build_module_steps(plan.modules.at(name), bctx);
     if (!steps) return std::unexpected(steps.error());
+    module_steps.emplace_back(name, std::move(*steps));
+  }
+  batch_packages(module_steps, closure->deps, *upgrades);
+  for (auto& [name, steps] : module_steps) {
     // A backend's upgrade runs before any of its installs: it leads the first
-    // module (in apply order) that uses the backend.
+    // module (in apply order) that uses the backend, where its first batch is.
     if (auto it = upgrades->find(name); it != upgrades->end()) {
       for (auto& st : it->second) plan.steps.push_back(std::move(st));
     }
-    for (auto& st : *steps) plan.steps.push_back(std::move(st));
+    for (auto& st : steps) plan.steps.push_back(std::move(st));
   }
   add_post_steps(plan.steps);
 

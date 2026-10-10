@@ -46,6 +46,9 @@ struct Plan {
   int pending_other() const { return count(CheckResult::OtherMode); }
   int blocked() const { return count(CheckResult::Blocked); }
   std::vector<const Step*> steps_of(const std::string& module) const;
+  // The module's own steps, with packages steps only where they still install
+  // one of this module's packages (a batch may belong to another module).
+  std::vector<const Step*> steps_for(const std::string& module) const;
 };
 
 }  // namespace repro

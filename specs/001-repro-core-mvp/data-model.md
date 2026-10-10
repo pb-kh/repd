@@ -215,6 +215,15 @@ Post-steps (`udev/reload`, `locale/generate`) are synthesized once per run,
 placed after the last step of their class in topo order, and only executed if a
 contributing step changed.
 
+Packages steps are batched per backend (`batch_packages`): walking modules in
+topo order, a module's packages join the backend's current batch, which belongs
+to (and runs at) the batch's first module; a module starts a new batch when a
+transitive dependency at or after that first module has another step in the
+same pass (anything but installs through the same backend, including an
+upgrade). `desired.owners` maps each package to the first module declaring it;
+`managed_packages` rows and module status use that owner, so a module is
+`pending` while a batch still has to install one of its packages.
+
 ### Step result lifecycle (apply)
 
 ```
@@ -233,7 +242,7 @@ other-mode ──▶ counted as pending for the other pass (never executed)
 |---|---|
 | applied | last complete run's fingerprint == current fingerprint and all its steps `ok`/`skip` |
 | stale | recorded fingerprint ≠ current fingerprint |
-| pending | no record, or unsatisfied steps exist for this mode |
+| pending | no record, or unsatisfied steps exist for this mode (incl. a batch installing its packages) |
 | failed | latest run touching the module ended with a failed/interrupted step of it |
 
 Precedence when several hold: failed > stale > pending > applied.

@@ -246,7 +246,8 @@ int cmd_status(const GlobalOptions& g, Mode mode, const std::optional<std::strin
   std::vector<std::vector<std::string>> rows = {{"MODULE", "STATUS", "LAST-RUN"}};
   for (const auto& m : plan.selected) {
     bool unsatisfied = false;
-    for (const auto* st : plan.steps_of(m)) {
+    // steps_for: a module's packages may be installed by another module's batch.
+    for (const auto* st : plan.steps_for(m)) {
       if (st->check == CheckResult::NeedsChange || st->check == CheckResult::Blocked) unsatisfied = true;
     }
     auto it = states.find(m);

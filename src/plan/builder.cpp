@@ -118,8 +118,9 @@ Result<std::vector<Step>> build_module_steps(const ResolvedModule& m, const Buil
                   std::format("module {} declares {} packages but that backend is not available", m.name, backend),
                   "");
     }
-    steps.push_back(make_step(m.name, StepClass::Packages, backend, it->second,
-                              PackagesDesired{std::move(names), {}, backend}));
+    PackagesDesired d{std::move(names), {}, backend, {}};
+    for (const auto& n : d.names) d.owners[n] = m.name;
+    steps.push_back(make_step(m.name, StepClass::Packages, backend, it->second, std::move(d)));
   }
   std::set<std::string> dests;
   for (const auto& f : m.files) {
@@ -256,6 +257,73 @@ Result<std::vector<Step>> build_module_steps(const ResolvedModule& m, const Buil
     return std::tie(a.cls, a.key) < std::tie(b.cls, b.key);
   });
   return steps;
+}
+
+void batch_packages(std::vector<std::pair<std::string, std::vector<Step>>>& modules,
+                    const std::map<std::string, std::vector<std::string>>& deps,
+                    const std::map<std::string, std::vector<Step>>& extra) {
+  std::map<std::string, std::size_t> pos;
+  for (std::size_t i = 0; i < modules.size(); ++i) pos[modules[i].first] = i;
+
+  // Transitive dependencies within the scope, memoised.
+  std::map<std::string, std::set<std::string>> ancestors;
+  auto ancestors_of = [&](auto& self, const std::string& m) -> const std::set<std::string>& {
+    if (auto it = ancestors.find(m); it != ancestors.end()) return it->second;
+    std::set<std::string> all;
+    if (auto it = deps.find(m); it != deps.end()) {
+      for (const auto& d : it->second) {
+        if (!pos.contains(d)) continue;
+        all.insert(d);
+        const auto& up = self(self, d);
+        all.insert(up.begin(), up.end());
+      }
+    }
+    return ancestors.emplace(m, std::move(all)).first->second;
+  };
+
+  // Does module `m` have a step that installs through `backend` must wait for:
+  // one in the same pass that is not itself an install through that backend?
+  auto orders_before = [&](const std::string& m, const std::string& backend, Mode pass) {
+    auto blocks = [&](const Step& s) {
+      if (s.privilege != pass) return false;
+      return !(s.cls == StepClass::Packages &&
+               std::get<PackagesDesired>(s.desired).backend == backend);
+    };
+    if (std::ranges::any_of(modules[pos.at(m)].second, blocks)) return true;
+    auto it = extra.find(m);
+    return it != extra.end() && std::ranges::any_of(it->second, blocks);
+  };
+
+  std::map<std::string, std::pair<std::size_t, std::size_t>>
+      open;  // backend -> (module, step) of its batch
+  for (std::size_t i = 0; i < modules.size(); ++i) {
+    auto& [name, steps] = modules[i];
+    for (std::size_t j = 0; j < steps.size();) {
+      if (steps[j].cls != StepClass::Packages) {
+        ++j;
+        continue;
+      }
+      auto& d = std::get<PackagesDesired>(steps[j].desired);
+      bool join = false;
+      if (auto o = open.find(d.backend); o != open.end()) {
+        const std::size_t anchor = o->second.first;
+        join = std::ranges::none_of(ancestors_of(ancestors_of, name), [&](const std::string& a) {
+          return pos.at(a) >= anchor && orders_before(a, d.backend, steps[j].privilege);
+        });
+      }
+      if (!join) {
+        open[d.backend] = {i, j};
+        ++j;
+        continue;
+      }
+      const auto [bi, bj] = open.at(d.backend);
+      auto& into = std::get<PackagesDesired>(modules[bi].second[bj].desired);
+      for (auto& n : d.names) {
+        if (into.owners.emplace(n, name).second) into.names.push_back(std::move(n));
+      }
+      steps.erase(steps.begin() + static_cast<std::ptrdiff_t>(j));
+    }
+  }
 }
 
 Status check_conflicts(const std::vector<const ResolvedModule*>& modules) {

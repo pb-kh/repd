@@ -32,6 +32,7 @@ integration_tests = [
   'test_us5_no_backends',
   'test_us5_missing_backend',
   'test_us5_backends',
+  'test_package_batches',
   'test_us5_repo_local',
   'test_resume',
   'test_errors',

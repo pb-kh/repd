@@ -3,6 +3,7 @@
 // after checking, a check result plus the text the preview renders.
 #pragma once
 
+#include <map>
 #include <optional>
 #include <string>
 #include <string_view>
@@ -59,10 +60,17 @@ struct UpgradeDesired {
   std::vector<std::string> installed;  // targeted: filled by the check (the rest is installed fresh)
 };
 
+// One install per backend for as many modules as ordering allows (batch_packages):
+// the step belongs to the first module of its batch, and `owners` remembers
+// which module declared each package.
 struct PackagesDesired {
   std::vector<std::string> names;    // without the "backend:" prefix
   std::vector<std::string> missing;  // filled by the check
   std::string backend;               // packages backend that installs them
+  std::map<std::string, std::string> owners;  // name -> first declaring module (apply order)
+
+  // Modules whose packages are missing, in apply order of first appearance.
+  std::vector<std::string> missing_owners() const;
 };
 
 struct ServiceDesired {

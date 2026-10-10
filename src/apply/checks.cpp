@@ -206,6 +206,11 @@ Status check_packages(Step& s, CheckContext& ctx) {
   }
   s.check = d.missing.empty() ? CheckResult::Satisfied : CheckResult::NeedsChange;
   s.summary = std::format("{}: install {}", d.backend, join(d.missing, ", "));
+  // A batch installs for several modules: say which, unless it is only its own.
+  if (const auto owners = d.missing_owners();
+      owners.size() > 1 || (owners.size() == 1 && owners[0] != s.module)) {
+    s.summary += std::format("  (for {})", join(owners, ", "));
+  }
   return {};
 }
 

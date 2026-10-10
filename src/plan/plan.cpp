@@ -34,4 +34,28 @@ std::vector<const Step*> Plan::steps_of(const std::string& module) const {
   return out;
 }
 
+std::vector<const Step*> Plan::steps_for(const std::string& module) const {
+  std::vector<const Step*> out;
+  for (const auto& s : steps) {
+    if (s.cls == StepClass::Packages) {
+      // A batch concerns the modules whose packages it still has to install.
+      const auto owners = std::get<PackagesDesired>(s.desired).missing_owners();
+      if (std::ranges::find(owners, module) != owners.end()) out.push_back(&s);
+    } else if (s.module == module) {
+      out.push_back(&s);
+    }
+  }
+  return out;
+}
+
+std::vector<std::string> PackagesDesired::missing_owners() const {
+  std::vector<std::string> out;
+  for (const auto& n : missing) {
+    auto it = owners.find(n);
+    if (it == owners.end()) continue;
+    if (std::ranges::find(out, it->second) == out.end()) out.push_back(it->second);
+  }
+  return out;
+}
+
 }  // namespace repro

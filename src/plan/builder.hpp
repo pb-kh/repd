@@ -45,6 +45,18 @@ Error package_without_backend(const std::string& who, const std::string& entry,
 // Steps of one module in class order, then key order.
 Result<std::vector<Step>> build_module_steps(const ResolvedModule& m, const BuildContext& ctx);
 
+// One packages step per backend instead of one per module. Walking `modules` in
+// apply order (each with its steps from build_module_steps), a module's install
+// joins the backend's current batch, which runs at the batch's first module.
+// It starts a new batch instead when it depends (transitively, via `deps`) on a
+// module at or after that first module with other steps in the same pass,
+// since those must run before its packages are installed (`extra` adds steps
+// planned outside build_module_steps, e.g. upgrades). A package declared twice
+// is installed once and owned by the first module that declares it.
+void batch_packages(std::vector<std::pair<std::string, std::vector<Step>>>& modules,
+                    const std::map<std::string, std::vector<std::string>>& deps,
+                    const std::map<std::string, std::vector<Step>>& extra = {});
+
 // Same env var in two modules of one scope, or two different locale defaults -> E_CONFLICT.
 Status check_conflicts(const std::vector<const ResolvedModule*>& modules);
 std::vector<std::string> locale_union(const std::vector<const ResolvedModule*>& modules);
