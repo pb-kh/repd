@@ -7,12 +7,12 @@
 #include "util/sha256.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 namespace {
 
-constexpr std::string_view kBlockBegin = "# BEGIN repro";
-constexpr std::string_view kBlockEnd = "# END repro";
+constexpr std::string_view kBlockBegin = "# BEGIN repd";
+constexpr std::string_view kBlockEnd = "# END repd";
 
 bool other_pass(const Step& s, const CheckContext& ctx) { return s.privilege != ctx.mode; }
 
@@ -133,8 +133,9 @@ Status check_file(Step& s, CheckContext& ctx) {
     return {};
   }
   s.check = CheckResult::Blocked;
-  s.blocked_reason = "exists and is not managed by repro";
-  s.summary = std::format("{}  exists and is not managed by repro — re-run with --adopt or set adopt = true", disp);
+  s.blocked_reason = "exists and is not managed by repd";
+  s.summary = std::format(
+      "{}  exists and is not managed by repd — re-run with --adopt or set adopt = true", disp);
   return {};
 }
 
@@ -146,14 +147,14 @@ Status check_block(Step& s, CheckContext& ctx) {
   const LocaleGen gen = parse_locale_gen(text.value_or(""));
   s.is_update = text.has_value();
   s.check = gen.has_block && gen.block == d.lines ? CheckResult::Satisfied : CheckResult::NeedsChange;
-  s.summary = std::format("{}  {} repro block ({})", ctx.paths.display(d.logical),
+  s.summary = std::format("{}  {} repd block ({})", ctx.paths.display(d.logical),
                           gen.has_block ? "update" : "add", d.purpose);
   return {};
 }
 
 // ---- upgrade -----------------------------------------------------------------
 
-// Only planned for `repro sync --upgrade`: always a change in its own pass.
+// Only planned for `repd sync --upgrade`: always a change in its own pass.
 Status check_upgrade(Step& s, CheckContext& ctx) {
   auto& d = std::get<UpgradeDesired>(s.desired);
   s.is_update = true;
@@ -428,4 +429,4 @@ Status check_all(std::vector<Step>& steps, CheckContext& ctx) {
   return {};
 }
 
-}  // namespace repro
+}  // namespace repd

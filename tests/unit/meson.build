@@ -18,7 +18,7 @@ doctest_args = cpp.get_supported_arguments('-Wno-c2y-extensions', '-Wno-#warning
 
 foreach name, srcs : unit_tests
   exe = executable('test-' + name, srcs, files('doctest_main.cpp'),
-    dependencies: [repro_core_dep, doctest_dep],
+    dependencies: [repd_core_dep, doctest_dep],
     cpp_args: doctest_args,
   )
   test(name, exe, suite: 'unit')

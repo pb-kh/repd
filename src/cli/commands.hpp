@@ -8,7 +8,7 @@
 
 #include "cli/pipeline.hpp"
 
-namespace repro {
+namespace repd {
 
 struct SyncArgs {
   bool user = false;
@@ -37,4 +37,4 @@ int cmd_plugins_list(const GlobalOptions& g);
 // Prints the error and returns its exit code.
 int report(const Error& e);
 
-}  // namespace repro
+}  // namespace repd

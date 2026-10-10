@@ -1,6 +1,6 @@
 // LuaJIT host (research R4, R9): owns the lua_State, loads the embedded
 // bootstrap through a custom package searcher, exposes host services to it
-// as the private module "repro.host", and tracks the evaluation phase.
+// as the private module "repd.host", and tracks the evaluation phase.
 #pragma once
 
 #include <lua.hpp>
@@ -16,7 +16,7 @@
 #include "util/errors.hpp"
 #include "util/value.hpp"
 
-namespace repro {
+namespace repd {
 
 enum class Phase { Eval, Check, Apply };
 std::string_view to_string(Phase p);
@@ -49,8 +49,8 @@ class LuaHost {
 
   // Calls require(module)[fn](args...) in protected mode; returns the first result.
   Result<Value> call(std::string_view module, std::string_view fn, const List& args = {});
-  // Shorthand for the bootstrap entry module "repro".
-  Result<Value> call(std::string_view fn, const List& args = {}) { return call("repro", fn, args); }
+  // Shorthand for the bootstrap entry module "repd".
+  Result<Value> call(std::string_view fn, const List& args = {}) { return call("repd", fn, args); }
 
   std::span<const EmbeddedFile> extra_files() const { return extra_; }
 
@@ -80,4 +80,4 @@ class PhaseScope {
 
 std::string utc_now();
 
-}  // namespace repro
+}  // namespace repd

@@ -1,8 +1,8 @@
 -- Evaluation sandbox (research R9, FR-018). Every config file gets a fresh
 -- environment holding only `rp` and side-effect-free standard functions.
 -- Ambient state (io, os, require, debug, ffi, jit, math.random) is absent.
-local err = require("repro.err")
-local util = require("repro.util")
+local err = require("repd.err")
+local util = require("repd.util")
 
 local M = {}
 
@@ -155,7 +155,7 @@ end
 
 -- rp_facade: the read-only `rp` proxy; rp_raw: the underlying table (for hints).
 function M.new_env(rp_facade, rp_raw)
-  rp_raw = rp_raw or require("repro").rp_raw
+  rp_raw = rp_raw or require("repd").rp_raw
   local env = {}
   for _, k in ipairs(M.SAFE_GLOBALS) do env[k] = _G[k] end
   env.pairs = proxy_iter

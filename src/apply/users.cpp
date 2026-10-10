@@ -7,7 +7,7 @@
 #include "platform/proc.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 namespace {
 
@@ -50,4 +50,4 @@ Result<StepOutcome> apply_user(const Step& s, ApplyContext& ctx) {
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

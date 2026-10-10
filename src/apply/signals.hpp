@@ -3,9 +3,9 @@
 // exit 130.
 #pragma once
 
-namespace repro {
+namespace repd {
 
 void install_signal_handlers();
 bool interrupted();
 
-}  // namespace repro
+}  // namespace repd

@@ -1,11 +1,11 @@
 -- Evaluation sandbox restrictions (research R9, FR-018).
 local lu = require("luaunit")
-local sandbox = require("repro.sandbox")
-local repro = require("repro")
-local err = require("repro.err")
+local sandbox = require("repd.sandbox")
+local repd = require("repd")
+local err = require("repd.err")
 
 local function run(src)
-  local env = sandbox.new_env(repro.rp)
+  local env = sandbox.new_env(repd.rp)
   local fn = assert(loadstring(src, "@modules/test.lua"))
   setfenv(fn, env)
   return pcall(fn)
@@ -90,7 +90,7 @@ end
 -- Params reach with_params and actions as read-only proxies (LuaJIT has no
 -- __len/__pairs/__ipairs), yet they must read like plain tables.
 local function params_env(values)
-  local env = sandbox.new_env(repro.rp)
+  local env = sandbox.new_env(repd.rp)
   env.p = sandbox.read_only(values, "params")
   return env
 end
@@ -145,9 +145,9 @@ function TestSandbox.test_plain_unwraps_nested_proxies()
 end
 
 function TestSandbox.test_plain_keeps_builder_values()
-  local builders = require("repro.builders")
+  local builders = require("repd.builders")
   local ro = sandbox.read_only({ zone = "UTC", files = { "a" } }, "params")
-  local action = repro.rp.action { name = "tz " .. ro.zone, mode = "user",
+  local action = repd.rp.action { name = "tz " .. ro.zone, mode = "user",
     check = function() return true end, run = function() end }
   action.extra = ro.files  -- a proxy inside a tagged table
   local frag = sandbox.plain({ actions = { action } })

@@ -1,7 +1,7 @@
-# repro-pacman add-on: a separately packaged backend plugin (research R17).
-pacman_addon = shared_module('librepro-pacman', 'src/main.cpp',
+# repd-pacman add-on: a separately packaged backend plugin (research R17).
+pacman_addon = shared_module('librepd-pacman', 'src/main.cpp',
   include_directories: inc,
-  cpp_args: ['-DREPRO_ADDON_VERSION="@0@"'.format(addon_version)],
+  cpp_args: ['-DREPD_ADDON_VERSION="@0@"'.format(addon_version)],
   name_prefix: '',
   gnu_symbol_visibility: 'hidden',
   install: true,

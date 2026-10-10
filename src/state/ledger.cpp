@@ -2,7 +2,7 @@
 
 #include "eval/host.hpp"  // utc_now
 
-namespace repro {
+namespace repd {
 
 Status Ledger::transaction(const std::function<Status()>& fn) {
   if (auto r = db_.exec("BEGIN IMMEDIATE"); !r) return r;
@@ -18,7 +18,7 @@ Result<std::int64_t> Ledger::insert_run(std::string_view mode,
                                         const std::optional<std::string>& profile,
                                         std::string_view argv, std::string_view version) {
   auto st = db_.prepare(
-      "INSERT INTO runs(started_at, mode, profile, argv, repro_version) VALUES (?, ?, ?, ?, ?)");
+      "INSERT INTO runs(started_at, mode, profile, argv, repd_version) VALUES (?, ?, ?, ?, ?)");
   if (!st) return std::unexpected(st.error());
   st->bind(1, utc_now()).bind(2, mode).bind(3, profile).bind(4, argv).bind(5, version);
   if (auto r = st->run(); !r) return std::unexpected(r.error());
@@ -152,7 +152,7 @@ std::map<std::string, ModuleState> Ledger::module_states() const {
 namespace {
 
 constexpr std::string_view kRunColumns =
-    "SELECT id, started_at, finished_at, mode, profile, argv, repro_version, outcome, exit_code, "
+    "SELECT id, started_at, finished_at, mode, profile, argv, repd_version, outcome, exit_code, "
     "n_applied, n_skipped, n_failed, n_pending_other FROM runs";
 
 RunRow read_run(const Stmt& st) {
@@ -163,7 +163,7 @@ RunRow read_run(const Stmt& st) {
   r.mode = st.text(3);
   r.profile = st.opt_text(4);
   r.argv = st.text(5);
-  r.repro_version = st.text(6);
+  r.repd_version = st.text(6);
   r.outcome = st.opt_text(7);
   if (st.opt_text(8)) r.exit_code = st.integer(8);
   r.counts = RunCounts{static_cast<int>(st.integer(9)), static_cast<int>(st.integer(10)),
@@ -247,4 +247,4 @@ std::optional<std::int64_t> Ledger::last_run_touching(std::string_view module) c
   return st->integer(0);
 }
 
-}  // namespace repro
+}  // namespace repd

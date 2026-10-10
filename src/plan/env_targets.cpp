@@ -9,7 +9,7 @@
 #include "platform/users.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 std::string login_shell(const Paths& paths, const Fs& fs) {
   if (auto e = find_passwd_entry(fs, paths.physical("/etc/passwd"), paths.user().name)) return e->shell;
@@ -59,20 +59,22 @@ Result<EnvTargets> resolve_env_targets(const std::string& option, const Paths& p
   return t;
 }
 
-std::string sh_env_dir(const Paths& paths) { return paths.xdg_data_home() + "/repro/env.d"; }
+std::string sh_env_dir(const Paths& paths) {
+  return paths.xdg_data_home() + "/repd/env.d";
+}
 
 std::string env_file_path(const Paths& paths, const std::string& target, Mode scope,
                           const std::string& module) {
   const std::string slug = module_slug(module);
   const bool user = scope == Mode::User;
   if (target == "sh") {
-    return user ? sh_env_dir(paths) + "/" + slug + ".sh" : "/etc/profile.d/repro-" + slug + ".sh";
+    return user ? sh_env_dir(paths) + "/" + slug + ".sh" : "/etc/profile.d/repd-" + slug + ".sh";
   }
   if (target == "fish") {
     return (user ? paths.xdg_config_home() + "/fish/conf.d" : std::string("/etc/fish/conf.d")) +
-           "/repro-" + slug + ".fish";
+           "/repd-" + slug + ".fish";
   }
-  return (user ? paths.user_env_dir() : paths.system_env_dir()) + "/90-repro-" + slug + ".conf";
+  return (user ? paths.user_env_dir() : paths.system_env_dir()) + "/90-repd-" + slug + ".conf";
 }
 
 namespace {
@@ -87,7 +89,7 @@ std::string fish_quote(const std::string& v) {
 
 std::string env_file_content(const std::string& target, const std::string& module,
                              const std::map<std::string, std::string>& vars) {
-  std::string out = std::format("# Managed by repro (module {}). Do not edit.\n", module);
+  std::string out = std::format("# Managed by repd (module {}). Do not edit.\n", module);
   for (const auto& [k, v] : vars) {
     if (target == "sh") out += std::format("export {}={}\n", k, sh_quote(v));
     else if (target == "fish") out += std::format("set -gx {} {}\n", k, fish_quote(v));
@@ -100,9 +102,9 @@ std::vector<std::string> sh_profile_block(const Paths& paths) {
   std::string dir = sh_env_dir(paths);
   if (paths.under_home(dir)) dir = "$HOME" + dir.substr(paths.user().home.size());
   return {
-      "# Environment declared in repro modules (env target: sh).",
+      "# Environment declared in repd modules (env target: sh).",
       std::format("for f in \"{}\"/*.sh; do [ -r \"$f\" ] && . \"$f\"; done; unset f", dir),
   };
 }
 
-}  // namespace repro
+}  // namespace repd

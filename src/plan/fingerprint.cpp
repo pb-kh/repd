@@ -1,6 +1,6 @@
 #include "plan/fingerprint.hpp"
 
-namespace repro {
+namespace repd {
 
 Result<std::string> fingerprint(LuaHost& host, const Value& record) {
   auto v = host.call("fingerprint", {record});
@@ -8,4 +8,4 @@ Result<std::string> fingerprint(LuaHost& host, const Value& record) {
   return v->as_string();
 }
 
-}  // namespace repro
+}  // namespace repd

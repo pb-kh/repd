@@ -1,6 +1,6 @@
 """Params passed straight from with_params into a declaration (read-only proxies)."""
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 LOCALE = '''return rp.module {
   params = { locales = { "en_US.UTF-8 UTF-8", "de_DE.UTF-8 UTF-8" }, vars = { EDITOR = "nvim" } },
@@ -15,9 +15,9 @@ LOCALE = '''return rp.module {
 '''
 
 
-class ParamsProxies(ReproTestCase):
+class ParamsProxies(RepdTestCase):
     def test_list_param_into_locale_locales(self):
-        self.sb.write("repro.lua", 'rp.profile { name = "main", default = true, use = { "system" } }\n')
+        self.sb.write("repd.lua", 'rp.profile { name = "main", default = true, use = { "system" } }\n')
         self.sb.write("modules/system.lua", LOCALE)
         r = self.sb.run("show", "system")
         self.assertOk(r)
@@ -29,7 +29,7 @@ class ParamsProxies(ReproTestCase):
     def test_action_built_from_params_in_with_params(self):
         # rp.action values are recognised by table identity: unwrapping params
         # must not copy them (system/time builds its time zone action this way).
-        self.sb.write("repro.lua", 'rp.profile { name = "main", default = true, use = { "system/time" } }\n')
+        self.sb.write("repd.lua", 'rp.profile { name = "main", default = true, use = { "system/time" } }\n')
         self.sb.write("modules/system/time.lua", """return rp.module {
   params = { zone = "UTC", extra = { "a", "b" } },
   with_params = function(p)

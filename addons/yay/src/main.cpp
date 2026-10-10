@@ -1,11 +1,11 @@
-// repro-yay: packages backend for yay, i.e. repo and AUR packages (contracts/plugin-abi.md).
+// repd-yay: packages backend for yay, i.e. repo and AUR packages (contracts/plugin-abi.md).
 // yay refuses to run as root and calls sudo itself for the pacman steps, so the
 // backend has user privilege (its packages belong to the user pass) and runs yay
 // on the terminal (exec_tty): the user sees the build and answers sudo's
 // password prompt. Credentials are checked up front, so a run without a
 // terminal fails with a clear error instead of hanging in sudo. AUR build
 // scripts are reviewed in yay's diff menu unless yay.review is "skip".
-#include <repro/plugin.h>
+#include <repd/plugin.h>
 #include <unistd.h>
 
 #include <initializer_list>
@@ -17,8 +17,8 @@
 
 namespace {
 
-const repro_host* g_host = nullptr;
-const repro_host_api* g_api = nullptr;
+const repd_host* g_host = nullptr;
+const repd_host_api* g_api = nullptr;
 bool g_authenticated = false;  // sudo credentials were checked in this run
 
 struct Output {
@@ -64,9 +64,9 @@ std::vector<std::string> with_names(std::vector<std::string> argv, const char* c
   return argv;
 }
 
-repro_status error(const std::string& msg) {
+repd_status error(const std::string& msg) {
   g_api->set_error(g_host, msg.c_str());
-  return REPRO_ERR;
+  return REPD_ERR;
 }
 
 // The privilege tool yay is configured with (`sudobin` in `yay -Pg`).
@@ -82,36 +82,39 @@ std::string sudo_bin() {
 
 // Makes sure yay's sudo calls will not stall: cached credentials (or NOPASSWD)
 // are used as they are; otherwise sudo asks for the password on the terminal.
-repro_status authenticate() {
-  if (g_authenticated) return REPRO_OK;
+repd_status authenticate() {
+  if (g_authenticated) return REPD_OK;
   const std::string bin = sudo_bin();
   const std::string_view base = std::string_view(bin).substr(bin.rfind('/') + 1);
   if (base != "sudo") {  // doas & co.: yay asks through them on the terminal itself
     g_authenticated = true;
-    return REPRO_OK;
+    return REPD_OK;
   }
   if (run({bin, "-n", "true"}).code != 0) {
     if (::isatty(STDIN_FILENO) != 1) {
       return error(
-          "yay needs sudo for pacman, but sudo wants a password and repro is not running in a terminal\n"
-          "run `repro sync -u` in a terminal, or authenticate first with `sudo -v`");
+          "yay needs sudo for pacman, but sudo wants a password and repd is not running in a "
+          "terminal\n"
+          "run `repd sync -u` in a terminal, or authenticate first with `sudo -v`");
     }
-    if (run_tty({bin, "-v", "-p", "[repro] sudo password for %u (yay installs packages): "}) != 0) {
+    if (run_tty({bin, "-v", "-p", "[repd] sudo password for %u (yay installs packages): "}) != 0) {
       return error("sudo authentication failed\nre-run and enter your password, or check your sudoers entry");
     }
   }
   g_authenticated = true;
-  return REPRO_OK;
+  return REPD_OK;
 }
 
-repro_status refuse_root() {
-  if (::geteuid() != 0) return REPRO_OK;
-  return error("yay must not run as root\nits packages belong to the user pass: run `repro sync -u` as yourself");
+repd_status refuse_root() {
+  if (::geteuid() != 0) return REPD_OK;
+  return error(
+      "yay must not run as root\nits packages belong to the user pass: run `repd sync -u` as "
+      "yourself");
 }
 
 int probe(void*) { return ::access("/usr/bin/yay", X_OK) == 0 ? 1 : 0; }
 
-repro_status installed(void*, const char* const* names, size_t n, unsigned char* out_flags) {
+repd_status installed(void*, const char* const* names, size_t n, unsigned char* out_flags) {
   // Same local database for repo and AUR packages. `pacman -T` (deptest) prints
   // the names nothing installed satisfies, honouring provides (yay-bin → yay);
   // `yay -T` would add a status line of its own.
@@ -126,7 +129,7 @@ repro_status installed(void*, const char* const* names, size_t n, unsigned char*
     if (!line.empty()) missing.insert(line);
   }
   for (size_t i = 0; i < n; ++i) out_flags[i] = missing.count(names[i]) != 0 ? 0 : 1;
-  return REPRO_OK;
+  return REPD_OK;
 }
 
 // yay.review = "diff" (default): yay's diff menu is forced on, with any saved
@@ -138,16 +141,18 @@ bool review() {
   return v == nullptr || std::string_view(v) != "skip";
 }
 
-repro_status yay(const char* op, bool needed, const char* const* names, size_t n) {
-  if (refuse_root() != REPRO_OK) return REPRO_ERR;
+repd_status yay(const char* op, bool needed, const char* const* names, size_t n) {
+  if (refuse_root() != REPD_OK) return REPD_ERR;
   const bool reviewing = review() && std::string_view(op) != "-R";
   if (reviewing && ::isatty(STDIN_FILENO) != 1) {
     return error(
-        "yay.review is \"diff\": yay shows AUR build scripts and asks before building, but repro is not "
+        "yay.review is \"diff\": yay shows AUR build scripts and asks before building, but repd is "
+        "not "
         "running in a terminal\n"
-        "run `repro sync -u` in a terminal, or skip the review for this run: --option yay.review=skip");
+        "run `repd sync -u` in a terminal, or skip the review for this run: --option "
+        "yay.review=skip");
   }
-  if (authenticate() != REPRO_OK) return REPRO_ERR;
+  if (authenticate() != REPD_OK) return REPD_ERR;
   std::vector<std::string> argv;
   argv.reserve(12 + n);
   argv.emplace_back("yay");
@@ -166,36 +171,48 @@ repro_status yay(const char* op, bool needed, const char* const* names, size_t n
   if (n > 0) argv.emplace_back("--");
   for (size_t i = 0; i < n; ++i) argv.emplace_back(names[i]);
   const int code = run_tty(argv);
-  if (code == 0) return REPRO_OK;
+  if (code == 0) return REPD_OK;
   return error(std::string("yay ") + op + " failed (exit " + std::to_string(code) +
                ")\nyay's output is shown above; fix the cause and re-run");
 }
 
 // Plain -S: refreshing the databases without upgrading would be a partial
-// upgrade; `repro sync --upgrade` runs upgrade() first instead.
-repro_status install(void*, const char* const* names, size_t n) { return yay("-S", true, names, n); }
+// upgrade; `repd sync --upgrade` runs upgrade() first instead.
+repd_status install(void*, const char* const* names, size_t n) {
+  return yay("-S", true, names, n);
+}
 
-// repro sync --upgrade: repo and AUR packages, reviewed like installs.
-repro_status upgrade(void*) { return yay("-Syu", false, nullptr, 0); }
+// repd sync --upgrade: repo and AUR packages, reviewed like installs.
+repd_status upgrade(void*) {
+  return yay("-Syu", false, nullptr, 0);
+}
 
-repro_status remove(void*, const char* const* names, size_t n) { return yay("-R", false, names, n); }
+repd_status remove(void*, const char* const* names, size_t n) {
+  return yay("-R", false, names, n);
+}
 
-// repro sync --upgrade MODULE…: without a database refresh, so AUR packages are
+// repd sync --upgrade MODULE…: without a database refresh, so AUR packages are
 // rebuilt when the AUR has a newer version and repo packages only move to the
 // version the last full upgrade fetched (never a partial upgrade).
-repro_status upgrade_packages(void*, const char* const* names, size_t n) { return yay("-S", true, names, n); }
+repd_status upgrade_packages(void*, const char* const* names, size_t n) {
+  return yay("-S", true, names, n);
+}
 
-const repro_packages_vt kVtable = {probe, installed, install, remove, nullptr, upgrade, upgrade_packages, nullptr};
+const repd_packages_vt kVtable = {probe,   installed, install,          remove,
+                                  nullptr, upgrade,   upgrade_packages, nullptr};
 
 }  // namespace
 
-extern "C" int repro_plugin_abi(void) { return REPRO_PLUGIN_ABI; }
+extern "C" int repd_plugin_abi(void) {
+  return REPD_PLUGIN_ABI;
+}
 
-extern "C" int repro_plugin_init(int abi, const repro_host* host, const repro_host_api* api,
-                                 repro_registrar* reg, const repro_registrar_api* reg_api) {
-  if (abi != REPRO_PLUGIN_ABI) return 1;
+extern "C" int repd_plugin_init(int abi, const repd_host* host, const repd_host_api* api,
+                                repd_registrar* reg, const repd_registrar_api* reg_api) {
+  if (abi != REPD_PLUGIN_ABI) return 1;
   g_host = host;
   g_api = api;
   if (reg_api->declare_option(reg, "yay.review", "diff,skip", "diff") != 0) return 1;
-  return reg_api->register_packages(reg, "yay", REPRO_ADDON_VERSION, REPRO_PRIV_USER, &kVtable, nullptr);
+  return reg_api->register_packages(reg, "yay", REPD_ADDON_VERSION, REPD_PRIV_USER, &kVtable,
+                                    nullptr);
 }

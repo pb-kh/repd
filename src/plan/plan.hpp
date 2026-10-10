@@ -14,7 +14,7 @@
 #include "plan/step.hpp"
 #include "platform/paths.hpp"
 
-namespace repro {
+namespace repd {
 
 struct BackendChoice {
   std::string ns;
@@ -51,4 +51,4 @@ struct Plan {
   std::vector<const Step*> steps_for(const std::string& module) const;
 };
 
-}  // namespace repro
+}  // namespace repd

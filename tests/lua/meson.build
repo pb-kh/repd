@@ -1,4 +1,4 @@
-# luaunit suites run inside repro-lua-test (research R18), suite `lua`.
+# luaunit suites run inside repd-lua-test (research R18), suite `lua`.
 lua_tests = [
   'test_canon',
   'test_sandbox',
@@ -20,5 +20,5 @@ test('test_api_docs', lua_test_exe,
   args: [files('test_api_docs.lua'), meson.project_source_root() / 'docs' / 'lua-api.md'],
   suite: 'lua')
 test('test_lint', lua_test_exe,
-  args: [files('test_lint.lua'), meson.project_source_root() / 'src' / 'lua' / 'repro'],
+  args: [files('test_lint.lua'), meson.project_source_root() / 'src' / 'lua' / 'repd'],
   suite: 'lua')

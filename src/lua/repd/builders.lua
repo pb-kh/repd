@@ -1,8 +1,8 @@
 -- Declaration builders (contracts/lua-api.md). Builders only *record*: they
 -- validate shape, tag the table with its kind, and return it. Nothing here
 -- touches the machine.
-local err = require("repro.err")
-local util = require("repro.util")
+local err = require("repd.err")
+local util = require("repd.util")
 
 local M = {}
 
@@ -344,7 +344,7 @@ end
 function M.param(spec)
   expect_table_arg(spec, "rp.param")
   check_fields(spec, PARAM_FIELDS, "rp.param")
-  local params = require("repro.params")
+  local params = require("repd.params")
   params.normalize(nil, nil, tag(spec, "param"))
   return spec
 end
@@ -360,12 +360,12 @@ function M.action(spec)
   return tag(spec, "action")
 end
 
--- Root builders record into the active collector (only while repro.lua runs).
+-- Root builders record into the active collector (only while repd.lua runs).
 M.collector = nil
 
 local function root_only(fn)
   if not M.collector then
-    err.raise("E_CONFIG", fn .. "() can only be used in repro.lua", "move it to the repository's repro.lua")
+    err.raise("E_CONFIG", fn .. "() can only be used in repd.lua", "move it to the repository's repd.lua")
   end
   return M.collector
 end
@@ -373,7 +373,7 @@ end
 function M.option(key, value)
   local c = root_only("rp.option")
   local valid = set_of(M.OPTION_KEYS)
-  -- "<backend>.<name>" keys belong to add-ons; repro checks them against what
+  -- "<backend>.<name>" keys belong to add-ons; repd checks them against what
   -- the installed plugins declare.
   local prefix = type(key) == "string" and key:match("^([%w_-]+)%.[%w_-]+$")
   if not valid[key] and prefix and prefix ~= "packages" and prefix ~= "services" and prefix ~= "env" then

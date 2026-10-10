@@ -4,7 +4,7 @@
 
 #include "plan/resolver.hpp"
 
-using namespace repro;
+using namespace repd;
 
 namespace {
 

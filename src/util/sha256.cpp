@@ -3,7 +3,7 @@
 #include <bit>
 #include <cstring>
 
-namespace repro {
+namespace repd {
 namespace {
 
 constexpr std::array<std::uint32_t, 64> kRound = {
@@ -126,4 +126,4 @@ std::string sha256_hex(std::string_view data) {
   return h.hex();
 }
 
-}  // namespace repro
+}  // namespace repd

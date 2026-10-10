@@ -8,12 +8,12 @@
 #include "util/errors.hpp"
 #include "util/value.hpp"
 
-namespace repro {
+namespace repd {
 
 void push_value(lua_State* L, const Value& v);
 Result<Value> to_value(lua_State* L, int index);
 
-// Maps a Lua error object (structured repro.err table or string) to an Error.
+// Maps a Lua error object (structured repd.err table or string) to an Error.
 Error error_from_lua(lua_State* L, int index);
 
-}  // namespace repro
+}  // namespace repd

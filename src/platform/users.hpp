@@ -12,7 +12,7 @@
 #include "platform/fs.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 // Snapshot of the process environment (injectable for tests).
 struct Env {
@@ -29,7 +29,7 @@ struct TargetUser {
   bool via_sudo = false;  // resolved from $SUDO_USER
 };
 
-// The user whose home/config repro manages: the invoking user, or $SUDO_USER under sudo.
+// The user whose home/config repd manages: the invoking user, or $SUDO_USER under sudo.
 Result<TargetUser> resolve_target_user(const Env& env, bool effective_root);
 
 struct PasswdEntry {
@@ -48,4 +48,4 @@ std::vector<std::string> member_groups(const Fs& fs, const std::string& group_pa
                                        const std::string& user);
 bool group_exists(const Fs& fs, const std::string& group_path, const std::string& group);
 
-}  // namespace repro
+}  // namespace repd

@@ -12,7 +12,7 @@
 #include "plan/resolver.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 // An integration (rp.module { integrates = { ... } }) touched by this selection.
 struct IntegrationStatus {
@@ -47,4 +47,4 @@ Result<Closure> select_scope(const std::map<std::string, ModuleMeta>& modules,
 // Topological order (dependencies first, ties by name) or E_CYCLE with the chain.
 Result<std::vector<std::string>> topo_order(const std::map<std::string, std::vector<std::string>>& deps);
 
-}  // namespace repro
+}  // namespace repd

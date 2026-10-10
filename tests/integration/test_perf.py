@@ -3,10 +3,10 @@
 import statistics
 import time
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class Performance(ReproTestCase):
+class Performance(RepdTestCase):
     fixture = None
 
     def test_forty_modules_noop_under_two_seconds(self):
@@ -23,7 +23,7 @@ return rp.module {{
   env = {{ VAR_{i:02d} = "{i}" }},
 }}""")
             self.sb.write(f"modules/{name}/files/{name}.txt", f"data {i}\n")
-        self.sb.write("repro.lua", "rp.profile { name = 'all', default = true, use = { "
+        self.sb.write("repd.lua", "rp.profile { name = 'all', default = true, use = { "
                       + ", ".join(f'"{n}"' for n in names) + " } }\n")
         r = self.sb.run("sync", "-u")
         self.assertOk(r)

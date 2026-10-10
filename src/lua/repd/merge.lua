@@ -1,10 +1,10 @@
 -- with_params fragment merge (research R11): list fields concatenate and are
 -- de-duplicated keeping the first occurrence; map fields merge, and the same
 -- key with different values is an E_CONFLICT.
-local canon = require("repro.canon")
-local err = require("repro.err")
-local util = require("repro.util")
-local builders = require("repro.builders")
+local canon = require("repd.canon")
+local err = require("repd.err")
+local util = require("repd.util")
+local builders = require("repd.builders")
 
 local M = {}
 

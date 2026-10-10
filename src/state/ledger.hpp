@@ -12,7 +12,7 @@
 #include "state/db.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 struct ManagedFile {
   std::string path;  // logical absolute path
@@ -44,7 +44,7 @@ struct RunRow {
   std::string mode;
   std::optional<std::string> profile;
   std::string argv;
-  std::string repro_version;
+  std::string repd_version;
   std::optional<std::string> outcome;
   std::optional<std::int64_t> exit_code;
   RunCounts counts;
@@ -99,4 +99,4 @@ class Ledger {
   Db& db_;
 };
 
-}  // namespace repro
+}  // namespace repd

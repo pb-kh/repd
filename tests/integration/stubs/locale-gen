@@ -1,4 +1,4 @@
 #!/bin/sh
 # Test stub: records the invocation instead of touching the live system.
-echo "locale-gen $*" >> "$REPRO_SYSROOT/stub.log"
+echo "locale-gen $*" >> "$REPD_SYSROOT/stub.log"
 exit 0

@@ -1,5 +1,5 @@
 -- Canonical, byte-stable serialisation (research R8). One serializer for
--- fingerprints (encode), repro.lock.lua and `repro show` (pretty).
+-- fingerprints (encode), repd.lock.lua and `repd show` (pretty).
 -- Keys are sorted by type name, then by value; integers print without a
 -- fraction; strings use %q; functions/userdata/cdata and cycles are rejected.
 local M = {}

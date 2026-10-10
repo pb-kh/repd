@@ -1,17 +1,17 @@
--- Bootstrap entry point (module "repro"). Builds the `rp` facade and exposes
+-- Bootstrap entry point (module "repd"). Builds the `rp` facade and exposes
 -- the functions the C++ host drives: load the root config, plugins and
 -- modules (EVAL), resolve parameterised declarations, run actions, and
 -- canonical encoding for fingerprints / lock / show.
-local host = require("repro.host")
-local canon = require("repro.canon")
-local err = require("repro.err")
-local util = require("repro.util")
-local sandbox = require("repro.sandbox")
-local builders = require("repro.builders")
-local params = require("repro.params")
-local merge = require("repro.merge")
-local lock = require("repro.lock")
-local backend = require("repro.backend")
+local host = require("repd.host")
+local canon = require("repd.canon")
+local err = require("repd.err")
+local util = require("repd.util")
+local sandbox = require("repd.sandbox")
+local builders = require("repd.builders")
+local params = require("repd.params")
+local merge = require("repd.merge")
+local lock = require("repd.lock")
+local backend = require("repd.backend")
 
 local M = {}
 

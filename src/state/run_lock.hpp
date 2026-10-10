@@ -7,7 +7,7 @@
 #include "platform/paths.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 class RunLock {
  public:
@@ -23,4 +23,4 @@ class RunLock {
   int fd_ = -1;
 };
 
-}  // namespace repro
+}  // namespace repd

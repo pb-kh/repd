@@ -1,7 +1,7 @@
-# repro-yay add-on: packages backend for yay (repo + AUR packages, research R17).
-yay_addon = shared_module('librepro-yay', 'src/main.cpp',
+# repd-yay add-on: packages backend for yay (repo + AUR packages, research R17).
+yay_addon = shared_module('librepd-yay', 'src/main.cpp',
   include_directories: inc,
-  cpp_args: ['-DREPRO_ADDON_VERSION="@0@"'.format(addon_version)],
+  cpp_args: ['-DREPD_ADDON_VERSION="@0@"'.format(addon_version)],
   name_prefix: '',
   gnu_symbol_visibility: 'hidden',
   install: true,

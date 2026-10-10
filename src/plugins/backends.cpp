@@ -7,7 +7,7 @@
 #include "platform/fs.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 int origin_rank(const std::string& origin) {
   if (origin == "system") return 0;
@@ -191,13 +191,14 @@ Result<Backend*> BackendRegistry::select(const std::string& ns, const std::strin
       if (b->info().ns == ns) names.push_back(b->info().name);
     }
     return fail(ec::kNoBackend,
-                std::format("repro.lua selects {} backend '{}', which is not installed", ns, option),
-                names.empty() ? std::format("install it, or set rp.option(\"{}.backend\", \"auto\")", ns)
-                              : std::format("available {} backends: {}", ns, [&] {
-                                  std::string s;
-                                  for (const auto& n : names) s += (s.empty() ? "" : ", ") + n;
-                                  return s;
-                                }()));
+                std::format("repd.lua selects {} backend '{}', which is not installed", ns, option),
+                names.empty()
+                    ? std::format("install it, or set rp.option(\"{}.backend\", \"auto\")", ns)
+                    : std::format("available {} backends: {}", ns, [&] {
+                        std::string s;
+                        for (const auto& n : names) s += (s.empty() ? "" : ", ") + n;
+                        return s;
+                      }()));
   }
   for (const auto& b : backends_) {
     if (b->info().ns != ns) continue;
@@ -215,11 +216,11 @@ Result<Backend*> BackendRegistry::select(const std::string& ns, const std::strin
 Error BackendRegistry::missing_named(const std::string& ns, const std::string& name, const std::string& who,
                                      const std::vector<std::string>& available, const Paths& paths) {
   RealFs fs;
-  // One add-on can register several backends (repro-flatpak: flatpak, flatpak-user).
+  // One add-on can register several backends (repd-flatpak: flatpak, flatpak-user).
   const std::string addon = name == "flatpak-user" ? "flatpak" : name;
   std::string hint = fs.stat(paths.physical("/usr/bin/pacman")).exists()
-                         ? std::format("install it with `pacman -S repro-{}`", addon)
-                         : std::format("install the repro-{} add-on", addon);
+                         ? std::format("install it with `pacman -S repd-{}`", addon)
+                         : std::format("install the repd-{} add-on", addon);
   hint += available.empty() ? std::format(", or add a Lua {} backend under plugins/lua/", ns)
                             : std::format(" (installed {} backends: {})", ns, join(available, ", "));
   return Error{std::string(ec::kNoBackend),
@@ -231,9 +232,9 @@ Error BackendRegistry::missing(const std::string& ns, const std::string& who, co
   const bool pacman = fs.stat(paths.physical("/usr/bin/pacman")).exists();
   const bool openrc = fs.stat(paths.physical("/run/openrc")).type == FileType::Dir;
   const bool systemd = !openrc && fs.stat(paths.physical("/usr/bin/systemctl")).exists();
-  std::string addon = "repro-pacman";
+  std::string addon = "repd-pacman";
   if (ns == "services") {
-    addon = openrc ? "repro-openrc" : systemd ? "repro-systemd" : "repro-openrc or repro-systemd";
+    addon = openrc ? "repd-openrc" : systemd ? "repd-systemd" : "repd-openrc or repd-systemd";
   }
   std::string hint;
   if (pacman && (ns == "packages" || openrc || systemd)) {
@@ -246,4 +247,4 @@ Error BackendRegistry::missing(const std::string& ns, const std::string& who, co
                std::format("{} needs a {} backend, but none is installed or usable", who, ns), hint};
 }
 
-}  // namespace repro
+}  // namespace repd

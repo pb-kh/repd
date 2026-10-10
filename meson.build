@@ -1,4 +1,4 @@
-project('repro', 'cpp', 'c',
+project('repd', 'cpp', 'c',
   version: '0.1.0',
   license: 'MIT',
   meson_version: '>= 1.4',
@@ -10,12 +10,12 @@ project('repro', 'cpp', 'c',
   ],
 )
 
-repro_version = meson.project_version()
+repd_version = meson.project_version()
 lua_api_version = 1
 plugin_abi_version = 1
-# Must match subprojects/luajit.wrap (recorded in `repro --version`).
+# Must match subprojects/luajit.wrap (recorded in `repd --version`).
 luajit_commit = 'c6ffc141a876'
-# Where repro looks for (and add-ons install) librepro-<name>.so plugins.
+# Where repd looks for (and add-ons install) librepd-<name>.so plugins.
 plugin_dir = get_option('plugin_dir')
 
 cpp = meson.get_compiler('cpp')
@@ -32,29 +32,29 @@ test_hooks = get_option('test_hooks')
 add_project_arguments(cpp.get_supported_arguments('-ffunction-sections', '-fdata-sections'),
   language: 'cpp')
 
-repro_args = [
-  '-DREPRO_VERSION="@0@"'.format(repro_version),
-  '-DREPRO_LUA_API_VERSION=@0@'.format(lua_api_version),
-  '-DREPRO_TEST_HOOKS=@0@'.format(test_hooks ? 1 : 0),
-  '-DREPRO_PLUGIN_ABI_VERSION=@0@'.format(plugin_abi_version),
-  '-DREPRO_PLUGIN_DIR="@0@"'.format(plugin_dir),
-  '-DREPRO_LUAJIT_COMMIT="@0@"'.format(luajit_commit),
+repd_args = [
+  '-DREPD_VERSION="@0@"'.format(repd_version),
+  '-DREPD_LUA_API_VERSION=@0@'.format(lua_api_version),
+  '-DREPD_TEST_HOOKS=@0@'.format(test_hooks ? 1 : 0),
+  '-DREPD_PLUGIN_ABI_VERSION=@0@'.format(plugin_abi_version),
+  '-DREPD_PLUGIN_DIR="@0@"'.format(plugin_dir),
+  '-DREPD_LUAJIT_COMMIT="@0@"'.format(luajit_commit),
 ]
 
 inc = include_directories('src', 'include')
 
 # Every embedded Lua file, so edits trigger a rebuild of the #embed units.
 lua_sources = files(
-  'src/lua/repro/init.lua',
-  'src/lua/repro/err.lua',
-  'src/lua/repro/util.lua',
-  'src/lua/repro/canon.lua',
-  'src/lua/repro/sandbox.lua',
-  'src/lua/repro/builders.lua',
-  'src/lua/repro/params.lua',
-  'src/lua/repro/merge.lua',
-  'src/lua/repro/lock.lua',
-  'src/lua/repro/backend.lua',
+  'src/lua/repd/init.lua',
+  'src/lua/repd/err.lua',
+  'src/lua/repd/util.lua',
+  'src/lua/repd/canon.lua',
+  'src/lua/repd/sandbox.lua',
+  'src/lua/repd/builders.lua',
+  'src/lua/repd/params.lua',
+  'src/lua/repd/merge.lua',
+  'src/lua/repd/lock.lua',
+  'src/lua/repd/backend.lua',
 )
 
 core_sources = files(
@@ -107,33 +107,33 @@ core_sources = files(
 
 core_deps = [luajit_dep, sqlite3_dep, dl_dep]
 
-repro_core = static_library('reprocore', core_sources,
+repd_core = static_library('repdcore', core_sources,
   include_directories: inc,
-  cpp_args: repro_args,
+  cpp_args: repd_args,
   dependencies: core_deps,
   extra_files: lua_sources,
 )
-repro_core_dep = declare_dependency(
-  link_with: repro_core,
+repd_core_dep = declare_dependency(
+  link_with: repd_core,
   include_directories: inc,
-  compile_args: repro_args,
+  compile_args: repd_args,
   dependencies: core_deps,
 )
 
 # Single self-contained binary (constitution C1): only libc/libm/libdl at runtime.
-repro_exe = executable('repro', 'src/main.cpp',
-  dependencies: [repro_core_dep, cli11_dep],
+repd_exe = executable('repd', 'src/main.cpp',
+  dependencies: [repd_core_dep, cli11_dep],
   link_args: cpp.get_supported_link_arguments('-static-libstdc++', '-static-libgcc', '-Wl,--gc-sections'),
   install: true,
 )
 
-lua_test_exe = executable('repro-lua-test',
+lua_test_exe = executable('repd-lua-test',
   'src/lua_test_main.cpp', 'src/eval/embedded_luaunit.cpp',
-  dependencies: repro_core_dep,
+  dependencies: repd_core_dep,
   extra_files: files('src/lua/vendor/luaunit.lua'),
 )
 
-install_headers('include/repro/plugin.h', subdir: 'repro')
+install_headers('include/repd/plugin.h', subdir: 'repd')
 
 if get_option('addons').allowed()
   subdir('addons')

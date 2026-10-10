@@ -1,12 +1,12 @@
-# repro Lua API reference (lua-api 1)
+# repd Lua API reference (lua-api 1)
 
-This is the normative, user-facing reference for configuring `repro`. Every
+This is the normative, user-facing reference for configuring `repd`. Every
 public `rp.*` symbol has a heading here; a test (`tests/lua/test_api_docs.lua`)
 fails if one is missing. Configuration is plain Lua 5.1 (LuaJIT).
 
 - [Repository layout](#repository-layout)
 - [Phases and the sandbox](#phases-and-the-sandbox)
-- [Root configuration (`repro.lua`)](#root-configuration-reprolua)
+- [Root configuration (`repd.lua`)](#root-configuration-repdlua)
 - [Modules and interfaces](#modules-and-interfaces)
 - [Read-only queries](#read-only-queries)
 - [Backend facades](#backend-facades)
@@ -17,9 +17,9 @@ fails if one is missing. Configuration is plain Lua 5.1 (LuaJIT).
 ## Repository layout
 
 ```
-~/.config/repro/            (or --config PATH, or $REPRO_CONFIG)
-├── repro.lua               entry point: options, pins, profiles
-├── repro.lock.lua          generated: recorded provider choices (commit it)
+~/.config/repd/            (or --config PATH, or $REPD_CONFIG)
+├── repd.lua               entry point: options, pins, profiles
+├── repd.lock.lua          generated: recorded provider choices (commit it)
 ├── modules/                the path is the module name
 │   ├── base/
 │   │   ├── init.lua        -> module "base"
@@ -38,7 +38,7 @@ modules, so it may hold `.lua` files (e.g. an nvim config).
 
 | Phase | When | Changes allowed? |
 |---|---|---|
-| EVAL | loading `repro.lua`, modules, `with_params`, repo backends' top level | no |
+| EVAL | loading `repd.lua`, modules, `with_params`, repo backends' top level | no |
 | CHECK | step checks and action `check(ctx)` | no |
 | APPLY | applying steps and action `run(ctx)` | yes, via `ctx` only |
 
@@ -56,9 +56,9 @@ suggestion when it looks like an `rp.*` name (`module` → `rp.module`).
 Integer, currently `1`. Additive changes keep the number; removals or
 semantic changes bump it.
 
-## Root configuration (`repro.lua`)
+## Root configuration (`repd.lua`)
 
-These builders may only be called from `repro.lua`.
+These builders may only be called from `repd.lua`.
 
 ### `rp.option(key, value)`
 
@@ -79,12 +79,12 @@ prefix, and unprefixed entries go to the default backend set above. A module
 may mix backends; each gets its own step, run in that backend's pass:
 
 ```lua
-rp.option("packages.default_backend", "pacman")          -- repro.lua
+rp.option("packages.default_backend", "pacman")          -- repd.lua
 -- in a module:
 packages = { "neovim", "yay:paru-bin", "flatpak:org.mozilla.firefox" }
 ```
 
-**One install per backend**: repro collects the packages of all modules in the
+**One install per backend**: repd collects the packages of all modules in the
 run and installs them through each backend in one go (one `pacman -S`, one
 `yay -S`, …), in the plan under the first module that uses the backend and
 listing the modules it installs for:
@@ -98,15 +98,15 @@ listing the modules it installs for:
 same pass (files, services, actions, …) after that point gets a new install
 there, so e.g. `pacman.conf` is written before packages from the repository it
 adds. A package two modules declare is installed once and recorded for the
-first of them; `repro status` shows a module pending while one of its packages
+first of them; `repd status` shows a module pending while one of its packages
 is missing, whichever module's install carries it.
 
 Installing never refreshes the package databases first (on Arch that would be
-a partial upgrade). Run `repro sync --upgrade` to fully upgrade each packages
+a partial upgrade). Run `repd sync --upgrade` to fully upgrade each packages
 backend in use (`pacman -Syu`, `yay -Syu`, …) before its installs; the upgrade
 shows in the plan and runs in that backend's pass.
 
-`repro sync --upgrade MODULE…` upgrades only the packages those modules
+`repd sync --upgrade MODULE…` upgrades only the packages those modules
 declare (plus their optional modules with `MODULE+`, not the modules they
 require), with one upgrade per backend for all of them. Packages not installed
 yet are simply installed. What a backend does:
@@ -121,11 +121,11 @@ A prefix naming a backend that is not installed is `E_NO_BACKEND` with the
 add-on to install; an unprefixed entry without a default is `E_CONFIG`.
 `rp.packages.installed { ... }` and friends accept the same spellings.
 
-**AUR packages** come from the `repro-yay` add-on (`"yay:paru-bin"`, or make
+**AUR packages** come from the `repd-yay` add-on (`"yay:paru-bin"`, or make
 `yay` the default backend). yay installs repo and AUR packages
-alike, refuses to run as root, and so installs during `repro sync -u`. It runs
+alike, refuses to run as root, and so installs during `repd sync -u`. It runs
 on your terminal: you see the build output, and when sudo needs a password,
-repro asks for it first (`[repro] sudo password for you (yay installs
+repd asks for it first (`[repd] sudo password for you (yay installs
 packages):`). Without a terminal the step fails unless sudo credentials are
 already cached (`sudo -v`) or sudo needs no password.
 
@@ -135,16 +135,16 @@ updates) and asks before building — which needs a terminal. `"skip"` builds
 without review and without confirmations, e.g. for unattended runs:
 
 ```lua
-rp.option("yay.review", "skip")          -- repro.lua, for every run
+rp.option("yay.review", "skip")          -- repd.lua, for every run
 ```
 ```sh
-repro sync -u --option yay.review=skip   # this run only
+repd sync -u --option yay.review=skip   # this run only
 ```
 
-**Flatpak apps** come from the `repro-flatpak` add-on, which has one backend
+**Flatpak apps** come from the `repd-flatpak` add-on, which has one backend
 per installation: `"flatpak:org.mozilla.firefox"` installs system-wide during
-`sudo repro sync -s`, `"flatpak-user:org.mozilla.firefox"` into your home
-(`flatpak --user`) during `repro sync -u`. Entries are application IDs or full
+`sudo repd sync -s`, `"flatpak-user:org.mozilla.firefox"` into your home
+(`flatpak --user`) during `repd sync -u`. Entries are application IDs or full
 refs (`"flatpak:runtime/org.freedesktop.Platform/x86_64/24.08"`). flatpak looks
 an ID up in the installation's remotes, so add one first, e.g. in a Lua action
 or once by hand:
@@ -154,8 +154,8 @@ flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.f
 flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo
 ```
 
-`repro sync --upgrade` runs `flatpak update` for each installation in use;
-`repro sync --upgrade MODULE…` updates just those modules' apps.
+`repd sync --upgrade` runs `flatpak update` for each installation in use;
+`repd sync --upgrade MODULE…` updates just those modules' apps.
 
 Any option can be overridden per run with `--option KEY=VALUE` on `sync`,
 `status` and `show`.
@@ -183,7 +183,7 @@ rp.profile {
 ```
 
 Provider precedence: `--provider` (1) › profile (2) › `rp.pin` (3) ›
-`repro.lock.lua` (4, unless `--reselect`) › the only provider › an
+`repd.lock.lua` (4, unless `--reselect`) › the only provider › an
 interactive prompt (recorded in the lock) › error `E_AMBIGUOUS`.
 
 ## Modules and interfaces
@@ -195,7 +195,7 @@ A module file returns exactly one declaration.
 | Field | Type | Meaning |
 |---|---|---|
 | `name` | string | optional; must equal the path-derived name |
-| `description` | string | shown by `repro list modules` |
+| `description` | string | shown by `repd list modules` |
 | `provides` | interface name | this module can satisfy that interface |
 | `priority` | integer | lower is preferred (prompt default); default 100 |
 | `requires` | list | modules or interfaces applied first; `{ "name", optional = true }` is only listed (see [Optional modules](#optional-modules-and-integrations)) |
@@ -215,8 +215,8 @@ A module file returns exactly one declaration.
 
 Unknown fields are errors with the closest valid name suggested.
 
-**Services** are handled by the selected services backend: `repro-openrc` or
-`repro-systemd`, auto-picked by the init the host booted. Units are written in
+**Services** are handled by the selected services backend: `repd-openrc` or
+`repd-systemd`, auto-picked by the init the host booted. Units are written in
 systemd style, so a module works on both: under OpenRC, `"sshd.service"` means
 the `sshd` init script, and a unit type with no OpenRC counterpart (`.timer`,
 `.socket`, …) is an error. With OpenRC, a service counts as `enabled` when it is
@@ -231,9 +231,9 @@ modules (`modules/<name>/init.lua`) can use `src`. `action` is `link` (default w
 (default with `content`). `mode` is an octal string (`"0600"`), not allowed on
 links. Files under the home directory belong to the user pass, others to the
 system pass; `scope = "user"` keeps a non-home file in the user pass.
-`adopt = true` lets repro take over an existing unmanaged file (a backup
-`<dest>.repro-adopted-<timestamp>` is kept); otherwise such files are refused
-until you pass `--adopt`. Drift on files repro manages is restored silently.
+`adopt = true` lets repd take over an existing unmanaged file (a backup
+`<dest>.repd-adopted-<timestamp>` is kept); otherwise such files are refused
+until you pass `--adopt`. Drift on files repd manages is restored silently.
 
 **Directories**: `src` may name a directory. With `copy`, every file under it
 is copied to the same relative path under `dest` and managed on its own: drift,
@@ -252,7 +252,7 @@ return rp.module {
 With `link` (the default), `dest` becomes one symlink to the whole directory,
 so edits in either place are the same file. An existing real directory at
 `dest` is refused until you adopt it, which moves it aside as
-`<dest>.repro-adopted-<timestamp>`. Switching an entry from `link` to `copy`
+`<dest>.repd-adopted-<timestamp>`. Switching an entry from `link` to `copy`
 is refused while `dest` is still the old symlink; remove the symlink first.
 A file removed from the source directory is not deleted from `dest`. A source
 symlink to a file is copied as a file, but a symlink to a directory is an error.
@@ -280,8 +280,8 @@ return rp.module {
 return rp.module { requires = { "dev/rust" }, packages = { "rust-analyzer" } }
 ```
 
-`repro sync -u dev/rust` shows `dev/rust/analyzer` under *optional, not
-synced*. Name it to sync it (`repro sync -u dev/rust dev/rust/analyzer`, or in
+`repd sync -u dev/rust` shows `dev/rust/analyzer` under *optional, not
+synced*. Name it to sync it (`repd sync -u dev/rust dev/rust/analyzer`, or in
 a profile's `use`), or add `+` to the module offering it: `dev/rust+` selects
 `dev/rust` with all its optional requires (one level). If a module named
 `x+` exists, `x+` means that module. An optional entry orders nothing, so
@@ -304,7 +304,7 @@ shell/fish`, or held by `auto_sync = false`. Naming an integration syncs it
 together with what it integrates. With `auto_sync = false` (in the module, or
 `{ "shell/fish/rust", auto_sync = false }` in a profile) an integration waits
 until it is named. A plain (non-optional) `requires` always syncs the module
-it names, whatever its `auto_sync`. `repro list modules` shows each module's
+it names, whatever its `auto_sync`. `repd list modules` shows each module's
 `integrates`, `optional for` and `auto_sync = false`.
 
 ### `rp.interface { name?, description }`
@@ -385,11 +385,11 @@ configuration is read raises `E_DECLARATIVE`.
 
 ### `rp.packages.remove(names)`
 
-APPLY only. repro v1 never removes packages on its own.
+APPLY only. repd v1 never removes packages on its own.
 
 ### `rp.packages.refresh()`
 
-APPLY only. repro refreshes package databases itself before installing.
+APPLY only. repd refreshes package databases itself before installing.
 
 ### `rp.services.state(unit, scope?)`
 
@@ -443,7 +443,7 @@ actions = {
 ### `rp.backend { namespace, name, privilege?, ops }`
 
 A Lua file in `plugins/lua/` returning a backend. It is flagged
-`repo ⚠ (reduced trust)` in previews and `repro plugins list`.
+`repo ⚠ (reduced trust)` in previews and `repd plugins list`.
 
 ```lua
 return rp.backend {
@@ -454,8 +454,8 @@ return rp.backend {
     probe     = function(ctx) return true end,
     installed = function(ctx, names) return { [name] = bool, ... } end,
     install   = function(ctx, names) ... end,
-    -- optional: remove, refresh, upgrade(ctx) (repro sync --upgrade),
-    --           upgrade_packages(ctx, names) (repro sync --upgrade MODULE…)
+    -- optional: remove, refresh, upgrade(ctx) (repd sync --upgrade),
+    --           upgrade_packages(ctx, names) (repd sync --upgrade MODULE…)
     -- services: state(ctx, unit, scope), enable/disable/start/stop(ctx, unit, scope)
   },
 }
@@ -474,9 +474,9 @@ is assumed:
 
 | Target | `env` (user) | `system_env` |
 |---|---|---|
-| `sh` | `~/.local/share/repro/env.d/<module>.sh`, loaded by one managed block in the login profile (`~/.profile`; `~/.bash_profile` for bash if it exists; `~/.zprofile` for zsh) | `/etc/profile.d/repro-<module>.sh` |
-| `fish` | `~/.config/fish/conf.d/repro-<module>.fish` | `/etc/fish/conf.d/repro-<module>.fish` |
-| `environment.d` | `~/.config/environment.d/90-repro-<module>.conf` | `/etc/environment.d/90-repro-<module>.conf` |
+| `sh` | `~/.local/share/repd/env.d/<module>.sh`, loaded by one managed block in the login profile (`~/.profile`; `~/.bash_profile` for bash if it exists; `~/.zprofile` for zsh) | `/etc/profile.d/repd-<module>.sh` |
+| `fish` | `~/.config/fish/conf.d/repd-<module>.fish` | `/etc/fish/conf.d/repd-<module>.fish` |
+| `environment.d` | `~/.config/environment.d/90-repd-<module>.conf` | `/etc/environment.d/90-repd-<module>.conf` |
 
 With `"auto"`, user variables follow the target user's login shell (`fish` →
 fish, anything else → sh); system variables always get `sh`, plus `fish` when
@@ -491,4 +491,4 @@ Errors print as `error[E_CODE]: <what, naming the module/step/path>` followed
 by `  hint: <next action>`. Exit codes: `0` success (including dry runs and
 up-to-date runs), `1` a step failed or was blocked by the adoption guard, `2`
 configuration/plan/usage error, `130` interrupted. The full catalogue is in
-`specs/001-repro-core-mvp/contracts/cli.md`.
+`specs/001-repd-core-mvp/contracts/cli.md`.

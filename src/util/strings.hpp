@@ -6,7 +6,7 @@
 #include <string_view>
 #include <vector>
 
-namespace repro {
+namespace repd {
 
 std::string_view trim(std::string_view s);
 std::vector<std::string> split(std::string_view s, char sep, bool keep_empty = false);
@@ -28,4 +28,4 @@ std::string closest_match(std::string_view word, std::span<const std::string> ca
 // Lua-compatible %q-free quoting for human output: wraps in double quotes when needed.
 std::string shell_quote(std::string_view s);
 
-}  // namespace repro
+}  // namespace repd

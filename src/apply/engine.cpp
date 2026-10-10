@@ -7,7 +7,7 @@
 #include "platform/proc.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 Result<StepOutcome> apply_step(const Step& s, ApplyContext& ctx) {
   switch (s.cls) {
@@ -42,7 +42,7 @@ std::string encode_detail(LuaHost* host, Map detail, const std::string& log) {
 ApplyResult apply_plan(Plan& plan, ApplyContext& actx, CheckContext& cctx, Ledger& ledger,
                        const std::string& argv, const LineSink& out) {
   ApplyResult result;
-  auto run = ledger.insert_run(to_string(plan.mode), plan.profile, argv, REPRO_VERSION);
+  auto run = ledger.insert_run(to_string(plan.mode), plan.profile, argv, REPD_VERSION);
   if (!run) {
     result.exit_code = run.error().exit_code();
     result.error = run.error();
@@ -205,4 +205,4 @@ ApplyResult apply_plan(Plan& plan, ApplyContext& actx, CheckContext& cctx, Ledge
   return result;
 }
 
-}  // namespace repro
+}  // namespace repd

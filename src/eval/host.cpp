@@ -12,7 +12,7 @@
 #include "util/sha256.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 std::string_view to_string(Phase p) {
   switch (p) {
@@ -40,7 +40,7 @@ LuaHost& host_of(lua_State* L) {
   return *host;
 }
 
-// Raises a structured repro.err error from C.
+// Raises a structured repd.err error from C.
 [[noreturn]] void raise(lua_State* L, const Error& e) {
   lua_createtable(L, 0, 3);
   lua_pushlstring(L, e.code.data(), e.code.size());
@@ -49,9 +49,9 @@ LuaHost& host_of(lua_State* L) {
   lua_setfield(L, -2, "message");
   lua_pushlstring(L, e.hint.data(), e.hint.size());
   lua_setfield(L, -2, "hint");
-  // Attach the repro.err metatable so err.is() recognises it.
+  // Attach the repd.err metatable so err.is() recognises it.
   lua_getglobal(L, "require");
-  lua_pushliteral(L, "repro.err");
+  lua_pushliteral(L, "repd.err");
   if (lua_pcall(L, 1, 1, 0) == 0) {
     lua_getfield(L, -1, "new");
     lua_pushliteral(L, "");
@@ -279,7 +279,7 @@ int h_backend_call(lua_State* L) {
   }
   if (!host.backend_dispatch()) {
     raise(L, Error{std::string(ec::kNoBackend), std::format("no {} backend is available", ns),
-                   "install a backend add-on (e.g. repro-pacman)"});
+                   "install a backend add-on (e.g. repd-pacman)"});
   }
   auto r = host.backend_dispatch()(ns, op, args);
   if (!r) raise(L, r.error());
@@ -369,7 +369,7 @@ LuaHost::LuaHost(const Paths& paths, Fs& fs, Mode mode, std::span<const Embedded
   lua_setfield(L_, -2, "cpath");
   lua_getfield(L_, -1, "preload");
   lua_pushcfunction(L_, guarded<open_host_module>);
-  lua_setfield(L_, -2, "repro.host");
+  lua_setfield(L_, -2, "repd.host");
   lua_pop(L_, 1);
   lua_getfield(L_, -1, "loaders");
   // Insert our searcher right after the preload searcher.
@@ -396,7 +396,7 @@ void LuaHost::log(std::string_view msg) {
 Result<Value> LuaHost::call(std::string_view module, std::string_view fn, const List& args) {
   lua_State* L = L_;
   const int base = lua_gettop(L);
-  luaL_checkstack(L, static_cast<int>(args.size()) + 8, "repro host call");
+  luaL_checkstack(L, static_cast<int>(args.size()) + 8, "repd host call");
   lua_getglobal(L, "require");
   lua_pushlstring(L, module.data(), module.size());
   if (lua_pcall(L, 1, 1, 0) != 0) {
@@ -409,7 +409,7 @@ Result<Value> LuaHost::call(std::string_view module, std::string_view fn, const 
   if (!lua_isfunction(L, -1)) {
     lua_settop(L, base);
     return fail(ec::kConfig, std::format("bootstrap function {}.{} is missing", module, fn),
-                "this is a bug in repro");
+                "this is a bug in repd");
   }
   for (const auto& a : args) push_value(L, a);
   if (lua_pcall(L, static_cast<int>(args.size()), 1, 0) != 0) {
@@ -422,4 +422,4 @@ Result<Value> LuaHost::call(std::string_view module, std::string_view fn, const 
   return v;
 }
 
-}  // namespace repro
+}  // namespace repd

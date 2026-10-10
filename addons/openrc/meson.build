@@ -1,7 +1,7 @@
-# repro-openrc add-on: services backend for OpenRC (research R17).
-openrc_addon = shared_module('librepro-openrc', 'src/main.cpp',
+# repd-openrc add-on: services backend for OpenRC (research R17).
+openrc_addon = shared_module('librepd-openrc', 'src/main.cpp',
   include_directories: inc,
-  cpp_args: ['-DREPRO_ADDON_VERSION="@0@"'.format(addon_version)],
+  cpp_args: ['-DREPD_ADDON_VERSION="@0@"'.format(addon_version)],
   name_prefix: '',
   gnu_symbol_visibility: 'hidden',
   install: true,

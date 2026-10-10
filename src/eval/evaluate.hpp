@@ -1,4 +1,4 @@
-// EVAL phase driver (research R9, R11): loads repro.lua, repo-local Lua
+// EVAL phase driver (research R9, R11): loads repd.lua, repo-local Lua
 // backends and every module file into fresh sandboxes, validates references
 // between them, and resolves selected modules' parameterised declarations.
 #pragma once
@@ -7,14 +7,14 @@
 #include <string>
 #include <vector>
 
-#include <repro/config.hpp>
+#include <repd/config.hpp>
 
 #include "eval/declaration.hpp"
 #include "eval/discovery.hpp"
 #include "eval/host.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 class Evaluator {
  public:
@@ -41,4 +41,4 @@ class Evaluator {
   Status configure();
 };
 
-}  // namespace repro
+}  // namespace repd

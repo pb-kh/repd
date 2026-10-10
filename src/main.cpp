@@ -1,4 +1,4 @@
-// repro — declarative environment configuration (contracts/cli.md).
+// repd — declarative environment configuration (contracts/cli.md).
 #include <CLI/CLI.hpp>
 
 #include <cstdio>
@@ -8,20 +8,22 @@
 
 namespace {
 
-using namespace repro;
+using namespace repd;
 
 int usage_error(const std::string& what) {
-  return report(Error{std::string(ec::kUsage), what, "see `repro --help` or `repro <command> --help`"});
+  return report(
+      Error{std::string(ec::kUsage), what, "see `repd --help` or `repd <command> --help`"});
 }
 
 }  // namespace
 
 int main(int argc, char** argv) {
-  CLI::App app{"repro — declarative, reproducible environment configuration in Lua", "repro"};
+  CLI::App app{"repd — declarative, reproducible environment configuration in Lua", "repd"};
   app.require_subcommand(0, 1);
   GlobalOptions g;
   std::string config;
-  app.add_option("--config", config, "Config repository root (default: $REPRO_CONFIG or ~/.config/repro)");
+  app.add_option("--config", config,
+                 "Config repository root (default: $REPD_CONFIG or ~/.config/repd)");
   app.add_flag("--no-color", g.no_color, "Disable colored output (also: NO_COLOR)");
   bool version = false;
   app.add_flag("--version", version, "Print version information");
@@ -31,7 +33,7 @@ int main(int argc, char** argv) {
   std::string init_dir;
   bool init_force = false;
   init->add_option("--dir", init_dir, "Where to create it (default: the config path)");
-  init->add_flag("--force", init_force, "Rewrite the starter files if repro.lua exists");
+  init->add_flag("--force", init_force, "Rewrite the starter files if repd.lua exists");
 
   // list
   auto* list = app.add_subcommand("list", "List modules, interfaces, profiles, providers or plugins");
@@ -63,7 +65,8 @@ int main(int argc, char** argv) {
                  "Fully upgrade each packages backend in use before installing; with MODULE…, upgrade only "
                  "the packages those modules declare");
   sync->add_option("--refresh", sa.refresh, "Re-check actions and post-steps of MODULE")->take_first();
-  sync->add_option("--provider", sa.providers, "Select IFACE=MODULE (recorded in repro.lock.lua)")->take_first();
+  sync->add_option("--provider", sa.providers, "Select IFACE=MODULE (recorded in repd.lock.lua)")
+      ->take_first();
   sync->add_option("--reselect", sa.reselect, "Ignore the recorded provider of IFACE")->take_first();
   sync->add_option("--option", g.options, "Override rp.option KEY=VALUE for this run (e.g. yay.review=skip)")
       ->take_all();
@@ -90,7 +93,8 @@ int main(int argc, char** argv) {
   // plugins
   auto* plugins = app.add_subcommand("plugins", "Backend add-ons");
   plugins->require_subcommand(1);
-  auto* plugins_list = plugins->add_subcommand("list", "List loaded backends (≡ repro list plugins)");
+  auto* plugins_list =
+      plugins->add_subcommand("list", "List loaded backends (≡ repd list plugins)");
 
   try {
     app.parse(argc, argv);

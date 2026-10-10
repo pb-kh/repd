@@ -4,16 +4,16 @@ to the module that declares it."""
 
 import sqlite3
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class PackageBatches(ReproTestCase):
+class PackageBatches(RepdTestCase):
     fixture = "needs-pkgs"
 
     def setUp(self):
         super().setUp()
         self.sb.add_plugin("fake-packages.lua")
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "fake")\n'
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "fake")\n'
                       'rp.profile { name = "main", default = true, use = { "a", "b", "c" } }\n')
         self.sb.write("modules/dev/c++.lua", "return rp.module { }")
         self.sb.write("modules/a.lua", 'return rp.module { packages = { "git", "vim" } }')
@@ -24,7 +24,7 @@ class PackageBatches(ReproTestCase):
         self.sb.write("modules/c.lua", 'return rp.module { requires = { "cfg" }, packages = { "zsh" } }')
 
     def managed_packages(self):
-        db = sqlite3.connect(self.sb.home / ".local/state/repro/repro.db")
+        db = sqlite3.connect(self.sb.home / ".local/state/repd/repd.db")
         try:
             return db.execute("SELECT name, module FROM managed_packages ORDER BY name").fetchall()
         finally:
@@ -47,7 +47,7 @@ class PackageBatches(ReproTestCase):
 
     def test_status_counts_a_batched_package_for_its_module(self):
         self.assertOk(self.sb.run("sync", "-u"))
-        mem = self.sb.home / ".local/state/repro/lua-backend-mem/fake.lua"
+        mem = self.sb.home / ".local/state/repd/lua-backend-mem/fake.lua"
         self.assertIn("curl=true", mem.read_text())
         mem.write_text(mem.read_text().replace("curl=true", "curl=false"))
         out = self.sb.run("status").out

@@ -8,7 +8,7 @@ kept in sync by a test, research R18). Lua dialect: LuaJIT / Lua 5.1.
 
 | Phase | When | Mutations allowed? |
 |---|---|---|
-| EVAL | loading `repro.lua`, module files, `with_params`, repo Lua plugins' top level | **No** — mutating calls raise `E_DECLARATIVE` |
+| EVAL | loading `repd.lua`, module files, `with_params`, repo Lua plugins' top level | **No** — mutating calls raise `E_DECLARATIVE` |
 | CHECK | running step satisfied-checks and action `check(ctx)` | No |
 | APPLY | running steps and action `run(ctx)` | Yes, via `ctx` only |
 
@@ -23,7 +23,7 @@ Unavailable: `io`, `os`, `require`, `load`, `loadstring`, `loadfile`,
 Reading an undefined global raises an error; if it resembles an `rp.*`
 symbol (e.g. `module`, `packages`) the message suggests it.
 
-## Root config builders (`repro.lua` only)
+## Root config builders (`repd.lua` only)
 
 ```lua
 rp.option(key, value)          -- key ∈ {"packages.default_backend","services.backend"}; value "auto" | backend name

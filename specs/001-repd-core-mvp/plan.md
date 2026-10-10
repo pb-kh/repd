@@ -1,15 +1,15 @@
-# Implementation Plan: repro — Declarative Environment Configuration Core
+# Implementation Plan: repd — Declarative Environment Configuration Core
 
-**Branch**: `001-repro-core-mvp` | **Date**: 2026-10-09 | **Spec**: [spec.md](./spec.md)
+**Branch**: `001-repd-core-mvp` | **Date**: 2026-10-09 | **Spec**: [spec.md](./spec.md)
 
-**Input**: Feature specification from `specs/001-repro-core-mvp/spec.md`
+**Input**: Feature specification from `specs/001-repd-core-mvp/spec.md`
 (design context: [REQUIREMENTS.md](../../REQUIREMENTS.md))
 
 ## Summary
 
-`repro` is a single C++23 binary embedding LuaJIT. Users keep a config
-repository (`repro.lua`, `modules/**.lua`, `files/`, `plugins/lua/`,
-generated `repro.lock.lua`). A run is a strict pipeline:
+`repd` is a single C++23 binary embedding LuaJIT. Users keep a config
+repository (`repd.lua`, `modules/**.lua`, `files/`, `plugins/lua/`,
+generated `repd.lock.lua`). A run is a strict pipeline:
 **discover → evaluate (sandboxed, recording-only Lua) → resolve (profiles,
 dependency closure, interface providers) → plan (deterministic ordered steps,
 each with a satisfied-check and a privilege) → preview or apply**, journaling
@@ -29,9 +29,9 @@ skip-on-unchanged), and sysroot/stub-based sandboxed integration tests.
 
 **Primary Dependencies**: LuaJIT (embedded, static), SQLite 3.46 amalgamation, CLI11 2.4 (header-only); test-only: doctest 2.4, luaunit (vendored single file), Python 3 stdlib — all pinned Meson wraps / vendored (research R2, R3, R18, R19)
 
-**Storage**: Per-mode SQLite (WAL): `~/.local/state/repro/repro.db` (user), `/var/lib/repro/repro.db` (system, 0600); repo-local `repro.lock.lua` (data-model §3)
+**Storage**: Per-mode SQLite (WAL): `~/.local/state/repd/repd.db` (user), `/var/lib/repd/repd.db` (system, 0600); repo-local `repd.lock.lua` (data-model §3)
 
-**Testing**: `meson test` suites `unit` (doctest), `lua` (`repro-lua-test` + luaunit), `integration` (Python stdlib driving the real binary in temp-dir + `REPRO_SYSROOT` sandboxes, stub system tools, fake Lua backends; `-Dtest_hooks=true` builds)
+**Testing**: `meson test` suites `unit` (doctest), `lua` (`repd-lua-test` + luaunit), `integration` (Python stdlib driving the real binary in temp-dir + `REPD_SYSROOT` sandboxes, stub system tools, fake Lua backends; `-Dtest_hooks=true` builds)
 
 **Target Platform**: Linux; Arch-derived distros primary (pacman/systemd add-ons); core must build & pass on NixOS (research R21)
 
@@ -50,9 +50,9 @@ skip-on-unchanged), and sysroot/stub-based sandboxed integration tests.
 | # | Principle / constraint | Pre-research | Post-design | Evidence |
 |---|---|---|---|---|
 | I | Declarative & reproducible; deterministic; idempotent; escape hatch marked | ✅ | ✅ | EVAL sandbox w/o `os`/`io`/`math.random` (R9); topo order + lexicographic tie-break, fixed class order (data-model §2); canonical serializer (R8); every step has a satisfied-check (R10); actions rendered `[imperative]` (cli.md) |
-| II | Lua/LuaJIT only config surface; no rebuild to extend; documented API; C++ never parses config | ✅ | ✅ | All config semantics in embedded `src/lua/` bootstrap; C++ receives evaluated data trees; repo-local Lua backends; lua-api.md + docs registry test (R18); `repro.lock.lua` loaded by Lua sandbox, not C++ |
+| II | Lua/LuaJIT only config surface; no rebuild to extend; documented API; C++ never parses config | ✅ | ✅ | All config semantics in embedded `src/lua/` bootstrap; C++ receives evaluated data trees; repo-local Lua backends; lua-api.md + docs registry test (R18); `repd.lock.lua` loaded by Lua sandbox, not C++ |
 | III | C++23, Meson/Ninja only, no code generators, hermetic pinned deps, -Werror in CI | ✅ | ✅ (with tracked items) | `#embed` instead of generators (R4); wraps with `source_hash` + `nodownload` (R3); LuaJIT's internal buildvm step contained in subproject → Complexity Tracking |
-| IV | Test-first, all in `meson test`, unit tests for parse/eval/apply, integration in sandbox never live | ✅ | ✅ | Suites unit/lua/integration; `REPRO_SYSROOT` + stubs + fake backends (R18); tasks phase must order tests before implementation |
+| IV | Test-first, all in `meson test`, unit tests for parse/eval/apply, integration in sandbox never live | ✅ | ✅ | Suites unit/lua/integration; `REPD_SYSROOT` + stubs + fake backends (R18); tasks phase must order tests before implementation |
 | V | Preview for every apply; idempotent; resumable; structured audit log | ✅ | ✅ | `--dry-run` on the only mutating command (`sync`) (SC-005); per-step committed journal (data-model §3.1); stop-at-first-failure + re-check on resume (R15); adoption guard with backups (R14) |
 | C1 | Single self-contained binary, no runtime interpreters/package managers | ✅ | ✅ (justified) | Core links LuaJIT/SQLite statically; add-on `.so` plugins are optional separately shipped deliverables, core runs with zero → Complexity Tracking |
 | C2 | Config is plain Lua; no proprietary formats | ✅ | ✅ | Lock file is Lua (lockfile.md); SQLite is internal state, not configuration |
@@ -65,7 +65,7 @@ skip-on-unchanged), and sysroot/stub-based sandboxed integration tests.
 ### Documentation (this feature)
 
 ```text
-specs/001-repro-core-mvp/
+specs/001-repd-core-mvp/
 ├── plan.md              # This file
 ├── research.md          # Phase 0: decisions R1–R21
 ├── data-model.md        # Phase 1: declaration/plan/state models, SQL schema
@@ -73,8 +73,8 @@ specs/001-repro-core-mvp/
 ├── contracts/
 │   ├── cli.md           # commands, flags, plan output format, exit codes, error catalogue
 │   ├── lua-api.md       # rp.* surface, phases, sandbox, ctx, Lua backends
-│   ├── plugin-abi.md    # include/repro/plugin.h, loading rules
-│   └── lockfile.md      # repro.lock.lua format
+│   ├── plugin-abi.md    # include/repd/plugin.h, loading rules
+│   └── lockfile.md      # repd.lock.lua format
 ├── checklists/requirements.md
 └── tasks.md             # Phase 2 (/speckit-tasks — not created here)
 ```
@@ -85,7 +85,7 @@ specs/001-repro-core-mvp/
 meson.build                     # project(cpp_std=c++23, warning_level=3), force_fallback_for
 meson.options                   # test_hooks (bool, false), addons (feature)
 .clang-format
-include/repro/plugin.h          # installed C ABI header
+include/repd/plugin.h          # installed C ABI header
 src/
 ├── main.cpp
 ├── cli/                        # CLI11 setup, commands, plan/journal/status rendering
@@ -96,11 +96,11 @@ src/
 ├── plugins/                    # discovery, dlopen, ABI checks, backend facades (native + Lua)
 ├── platform/                   # Fs, Proc, Users, Paths (XDG, SUDO_USER, sysroot hook)
 ├── util/                       # sha256, errors (E_* codes + hints), strings
-└── lua/                        # embedded bootstrap: repro/{init,builders,sandbox,canon,params,
+└── lua/                        # embedded bootstrap: repd/{init,builders,sandbox,canon,params,
                                 #   resolve,merge,lock,backend}.lua, vendor/luaunit.lua (test binary only)
 addons/
-├── pacman/                     # shared_module pacman.so  (deliverable: repro-pacman)
-└── systemd/                    # shared_module systemd.so (deliverable: repro-systemd)
+├── pacman/                     # shared_module pacman.so  (deliverable: repd-pacman)
+└── systemd/                    # shared_module systemd.so (deliverable: repd-systemd)
 tests/
 ├── unit/                       # doctest: sha256, plan graph, resolver, state, platform fakes
 ├── lua/                        # luaunit: canon, sandbox, params, merge, lock IO, docs registry
@@ -124,16 +124,16 @@ distinction.
 
 | Target | Kind | Notes |
 |---|---|---|
-| `repro` | executable | core; static LuaJIT + SQLite |
-| `repro-lua-test` | executable (not installed) | same host + luaunit; runs `tests/lua` |
+| `repd` | executable | core; static LuaJIT + SQLite |
+| `repd-lua-test` | executable (not installed) | same host + luaunit; runs `tests/lua` |
 | `test-*` | executables | doctest per component |
-| `pacman`, `systemd` | shared_module | installed to `libdir/repro/plugins`; built when `-Daddons` enabled |
+| `pacman`, `systemd` | shared_module | installed to `libdir/repd/plugins`; built when `-Daddons` enabled |
 
 ## Implementation phasing (input for /speckit-tasks)
 
 Milestones follow user-story priority; each lands tests first.
 
-1. **M0 Foundation** — Meson skeleton, wraps, `#embed` bootstrap loading, `repro --version`, platform layer + fakes, sha256, canon serializer, error type with hints. *(blocks all)*
+1. **M0 Foundation** — Meson skeleton, wraps, `#embed` bootstrap loading, `repd --version`, platform layer + fakes, sha256, canon serializer, error type with hints. *(blocks all)*
 2. **M1 US1** — discovery + sandboxed eval of modules/root config; files/env step classes; plan + preview; SQLite store, journal, managed_files; adoption guard; drift restore; `init`, `sync -u`, `status`, `journal`.
 3. **M2 US2** — requires graph, cycles, interfaces/providers, resolver precedence, prompt, lock file, `--provider/--reselect/--yes`, `list providers`, `show`.
 4. **M3 US3** — privilege classification, `-s` pass, root check, SUDO_USER resolution, system stores, users/locale/udev step classes with post-steps, other-mode pending counts.
@@ -150,21 +150,21 @@ Lua-backend loader move into M1 as a minimal slice (native `.so` loading stays i
 | REQUIREMENTS item | Plan decision | Ref |
 |---|---|---|
 | §11 vendor serpent + inspect.lua | In-house `canon.lua` only | R8 |
-| FR-B-3 `<repro>/plugins/*.so` | Repo-local extensions are Lua only | R17 |
+| FR-B-3 `<repd>/plugins/*.so` | Repo-local extensions are Lua only | R17 |
 | FR-M-3 field `modules` (sub-assemblies) | Not in v1; use `requires` | lua-api.md |
 | FR-M-3 lacks system env | New field `system_env` | R12 |
 | FR-A-3 single aggregated env file | One env file per module | R13 |
 | FR-S-4 skip whole module on hash match | Cheap checks always run; only actions gated by fingerprint | R10 |
 | FR-X-4 `--keep-going` | Out of this feature (v1.5) | R15 |
-| `repro env-sh` | Docs page only | R13 |
+| `repd env-sh` | Docs page only | R13 |
 | FR-B-6 `plugins list [--user|--system]` | `plugins list` reports both search sets; user dir only in user mode | plugin-abi.md |
 
 ## Complexity Tracking
 
 | Item | Why Needed | Simpler Alternative Rejected Because |
 |---|---|---|
-| LuaJIT subproject runs its own minilua/buildvm generation | LuaJIT cannot be built otherwise; constitution mandates LuaJIT pinned in-build | System LuaJIT is unpinned (Principle III); generation is confined to the third-party subproject, repro adds no generators |
+| LuaJIT subproject runs its own minilua/buildvm generation | LuaJIT cannot be built otherwise; constitution mandates LuaJIT pinned in-build | System LuaJIT is unpinned (Principle III); generation is confined to the third-party subproject, repd adds no generators |
 | Optional `.so` add-ons outside the single binary | FR-020/021 require swappable package/service backends shipped separately | Compiling every backend into core couples core to every distro and violates "core knows nothing about specific package managers"; core still runs with zero add-ons |
 | CLI11 dependency | ~7 subcommands, repeatable `--provider/--refresh/--reselect`, exact exit-code control | Hand-rolled parser is more code to test for no product value; header-only so no runtime footprint |
 | doctest + luaunit + Python stdlib for tests | Three test layers mandated by Principle IV (C++ unit, Lua API, sandboxed E2E) | One layer cannot cover both C++ internals and the Lua contract; Python already present as Meson's runtime |
-| `-Dtest_hooks` (`REPRO_SYSROOT`, `REPRO_TEST_ASSUME_ROOT`) | System-pass integration tests must never touch the live system | User-namespace sandboxes are unavailable in many CI runners; hooks are compiled out of release builds |
+| `-Dtest_hooks` (`REPD_SYSROOT`, `REPD_TEST_ASSUME_ROOT`) | System-pass integration tests must never touch the live system | User-namespace sandboxes are unavailable in many CI runners; hooks are compiled out of release builds |

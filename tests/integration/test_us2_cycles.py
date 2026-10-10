@@ -1,9 +1,9 @@
 """US2 acceptance 6: a dependency cycle is a plan-time error that shows the chain."""
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class Cycles(ReproTestCase):
+class Cycles(RepdTestCase):
     fixture = "providers"
 
     def test_cycle_chain(self):

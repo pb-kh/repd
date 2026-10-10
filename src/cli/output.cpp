@@ -6,7 +6,7 @@
 #include <format>
 #include <print>
 
-namespace repro {
+namespace repd {
 
 Style Style::detect(int fd, bool no_color_flag) {
   Style s;
@@ -24,4 +24,4 @@ void print_warning(std::string_view msg) {
   std::println(stderr, "{}: {}", s.yellow("warning"), msg);
 }
 
-}  // namespace repro
+}  // namespace repd

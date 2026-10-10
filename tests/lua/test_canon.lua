@@ -1,6 +1,6 @@
 -- Byte-stable canonical encoding (research R8, SC-003).
 local lu = require("luaunit")
-local canon = require("repro.canon")
+local canon = require("repd.canon")
 
 TestCanon = {}
 

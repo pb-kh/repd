@@ -1,7 +1,7 @@
 -- Module parameters (FR-017, data-model.md "Param"): declaration
 -- normalisation, type inference, validation, and resolution of overrides.
-local err = require("repro.err")
-local util = require("repro.util")
+local err = require("repd.err")
+local util = require("repd.util")
 
 local M = {}
 
@@ -27,7 +27,7 @@ end
 
 local function show(v)
   if type(v) == "string" then return string.format("%q", v) end
-  if type(v) == "table" then return require("repro.canon").encode(v) end
+  if type(v) == "table" then return require("repd.canon").encode(v) end
   return tostring(v)
 end
 
@@ -60,7 +60,7 @@ end
 
 -- Accepts an rp.param{} table or a plain default value (shorthand).
 function M.normalize(module, name, p)
-  local builders = require("repro.builders")
+  local builders = require("repd.builders")
   if builders.kind_of(p) ~= "param" then p = { default = p } end
   local decl = { description = p.description, one_of = p.one_of, default = p.default }
   decl.has_default = p.default ~= nil

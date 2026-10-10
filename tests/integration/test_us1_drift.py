@@ -2,10 +2,10 @@
 
 import os
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class Drift(ReproTestCase):
+class Drift(RepdTestCase):
     fixture = "files-only"
 
     def test_content_drift_restored(self):
@@ -32,10 +32,10 @@ class Drift(ReproTestCase):
         self.assertEqual(os.readlink(link), str(self.sb.config / "modules/dotfiles/files/gitconfig"))
 
     def test_deleted_state_store_never_skips(self):
-        """Edge case: losing bookkeeping must not make repro skip real work."""
+        """Edge case: losing bookkeeping must not make repd skip real work."""
         self.assertOk(self.sb.run("sync", "-u"))
-        state = self.sb.home / ".local/state/repro"
-        for p in state.glob("repro.db*"):
+        state = self.sb.home / ".local/state/repd"
+        for p in state.glob("repd.db*"):
             p.unlink()
         self.sb.home_path(".inputrc").write_text("x\n")
         r = self.sb.run("sync", "-u")

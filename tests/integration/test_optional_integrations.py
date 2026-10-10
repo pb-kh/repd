@@ -1,6 +1,6 @@
 """Optional requires, "name+" selection, integrations and auto_sync."""
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
 def module(name, **fields):
@@ -11,7 +11,7 @@ def module(name, **fields):
             f'  files = {{ {{ dest = "~/out/{slug}", content = "{name}\\n" }} }},\n}}\n')
 
 
-class Optional(ReproTestCase):
+class Optional(RepdTestCase):
     def setUp(self):
         super().setUp()
         self.profile('"dev/rust"')
@@ -27,7 +27,7 @@ class Optional(ReproTestCase):
             "shell/zsh/rust", integrates='{ "shell/zsh", "dev/rust" }', auto_sync="false"))
 
     def profile(self, use):
-        self.sb.write("repro.lua", f'rp.profile {{ name = "main", default = true, use = {{ {use} }} }}\n')
+        self.sb.write("repd.lua", f'rp.profile {{ name = "main", default = true, use = {{ {use} }} }}\n')
 
     def synced(self):
         out = self.sb.home_path("out")

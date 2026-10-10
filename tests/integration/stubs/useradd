@@ -1,7 +1,7 @@
 #!/bin/sh
-# Test stub: logs the call and emulates useradd inside $REPRO_SYSROOT.
+# Test stub: logs the call and emulates useradd inside $REPD_SYSROOT.
 set -eu
-echo "useradd $*" >> "$REPRO_SYSROOT/stub.log"
+echo "useradd $*" >> "$REPD_SYSROOT/stub.log"
 shell=/bin/sh groups=""
 while [ $# -gt 1 ]; do
   case "$1" in
@@ -12,9 +12,9 @@ while [ $# -gt 1 ]; do
   esac
 done
 name="$1"
-mkdir -p "$REPRO_SYSROOT/etc"
-touch "$REPRO_SYSROOT/etc/passwd" "$REPRO_SYSROOT/etc/group"
-if grep -q "^$name:" "$REPRO_SYSROOT/etc/passwd"; then echo "useradd: user '$name' already exists" >&2; exit 9; fi
-echo "$name:x:2000:2000::/home/$name:$shell" >> "$REPRO_SYSROOT/etc/passwd"
+mkdir -p "$REPD_SYSROOT/etc"
+touch "$REPD_SYSROOT/etc/passwd" "$REPD_SYSROOT/etc/group"
+if grep -q "^$name:" "$REPD_SYSROOT/etc/passwd"; then echo "useradd: user '$name' already exists" >&2; exit 9; fi
+echo "$name:x:2000:2000::/home/$name:$shell" >> "$REPD_SYSROOT/etc/passwd"
 [ -n "$groups" ] && exec "$(dirname "$0")/usermod" -a -G "$groups" "$name"
 exit 0

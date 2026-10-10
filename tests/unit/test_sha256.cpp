@@ -5,7 +5,7 @@
 
 #include "util/sha256.hpp"
 
-using repro::sha256_hex;
+using repd::sha256_hex;
 
 TEST_CASE("sha256: empty string") {
   CHECK(sha256_hex("") == "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
@@ -32,7 +32,7 @@ TEST_CASE("sha256: one million 'a'") {
 }
 
 TEST_CASE("sha256: incremental updates equal one-shot") {
-  repro::Sha256 h;
+  repd::Sha256 h;
   const std::string msg = "The quick brown fox jumps over the lazy dog";
   for (char c : msg) h.update(std::string_view(&c, 1));
   CHECK(h.hex() == sha256_hex(msg));
@@ -53,7 +53,7 @@ TEST_CASE("sha256: block-boundary lengths 55/56/63/64/65") {
         "9537c5fdf120482f7d58d25e9ed583f52c02b4e304ea814db1633ad565aed7e9");
   for (std::size_t n : {55u, 56u, 63u, 64u, 65u, 119u, 120u}) {
     std::string s(n, 'q');
-    repro::Sha256 a;
+    repd::Sha256 a;
     a.update(s.substr(0, n / 2));
     a.update(s.substr(n / 2));
     CHECK(a.hex() == sha256_hex(s));

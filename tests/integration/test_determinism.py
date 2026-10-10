@@ -1,6 +1,6 @@
 """SC-003: previews are byte-identical across runs and across declaration orders."""
 
-from conftest import ReproTestCase, Sandbox, main
+from conftest import RepdTestCase, Sandbox, main
 
 ORDER_A = """
 return rp.module {
@@ -16,7 +16,7 @@ return rp.module {
 }"""
 
 
-class Determinism(ReproTestCase):
+class Determinism(RepdTestCase):
     fixture = "profiles"
 
     def test_two_dry_runs_identical(self):

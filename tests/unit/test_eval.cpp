@@ -5,8 +5,8 @@
 #include "platform/fs.hpp"
 #include "temp_repo.hpp"
 
-using namespace repro;
-using repro::testing::TempRepo;
+using namespace repd;
+using repd::testing::TempRepo;
 
 namespace {
 
@@ -20,13 +20,13 @@ struct Harness {
       : paths(Paths::make(TargetUser{"alice", 1000, 1000, "/home/alice", false}, repo.root)),
         host(paths, fs, Mode::User),
         eval(host, fs, ConfigRepository::at(repo.root)) {
-    repo.write("repro.lua", "");
+    repo.write("repd.lua", "");
   }
 };
 
 }  // namespace
 
-TEST_CASE("eval: missing repro.lua") {
+TEST_CASE("eval: missing repd.lua") {
   TempRepo repo;
   RealFs fs;
   const Paths paths = Paths::make(TargetUser{"a", 1, 1, "/home/a", false}, repo.root);
@@ -35,7 +35,7 @@ TEST_CASE("eval: missing repro.lua") {
   auto r = ev.load_root();
   REQUIRE_FALSE(r);
   CHECK(r.error().code == "E_CONFIG");
-  CHECK(r.error().hint.find("repro init") != std::string::npos);
+  CHECK(r.error().hint.find("repd init") != std::string::npos);
 }
 
 TEST_CASE("eval: discovery names modules by path") {
@@ -156,7 +156,7 @@ TEST_CASE("eval: mutating facade during evaluation is E_DECLARATIVE") {
 
 TEST_CASE("eval: root config profiles, pins and options") {
   Harness h;
-  h.repo.write("repro.lua", R"(
+  h.repo.write("repd.lua", R"(
     rp.option("packages.default_backend", "pacman")
     rp.option("services.backend", "auto")
     rp.pin("dev/ide", "dev/ide/vim")
@@ -177,19 +177,19 @@ TEST_CASE("eval: root config profiles, pins and options") {
 
 TEST_CASE("eval: packages have no automatic backend; entries are name or backend:name") {
   Harness h;
-  h.repo.write("repro.lua", "rp.option('packages.default_backend', 'auto')");
+  h.repo.write("repd.lua", "rp.option('packages.default_backend', 'auto')");
   auto root = h.eval.load_root();
   REQUIRE_FALSE(root);
   CHECK(root.error().message.find("packages.default_backend has no \"auto\"") != std::string::npos);
   CHECK(root.error().hint.find("\"yay:neovim\"") != std::string::npos);
 
-  h.repo.write("repro.lua", "rp.option('packages.backend', 'pacman')");
+  h.repo.write("repd.lua", "rp.option('packages.backend', 'pacman')");
   root = h.eval.load_root();
   REQUIRE_FALSE(root);
   CHECK(root.error().message.find("renamed to packages.default_backend") != std::string::npos);
   CHECK(root.error().hint == "rp.option(\"packages.default_backend\", \"pacman\")");
 
-  h.repo.write("repro.lua", "");
+  h.repo.write("repd.lua", "");
   h.repo.write("modules/ok.lua", "return rp.module { packages = { 'neovim', 'flatpak:org.mozilla.firefox' } }");
   h.repo.write("modules/bad.lua", "return rp.module { packages = { 'git', ':vim' } }");
   auto mods = h.eval.load_modules();
@@ -205,24 +205,24 @@ TEST_CASE("eval: packages have no automatic backend; entries are name or backend
 
 TEST_CASE("eval: root config errors") {
   Harness h;
-  h.repo.write("repro.lua", "rp.option('packages.backnd', 'auto')");
+  h.repo.write("repd.lua", "rp.option('packages.backnd', 'auto')");
   auto root = h.eval.load_root();
   REQUIRE_FALSE(root);
   CHECK(root.error().hint.find("packages.default_backend") != std::string::npos);
 
-  h.repo.write("repro.lua",
+  h.repo.write("repd.lua",
                "rp.profile { name = 'a', default = true, use = { 'x' } }\n"
                "rp.profile { name = 'b', default = true, use = { 'x' } }");
   root = h.eval.load_root();
   REQUIRE_FALSE(root);
   CHECK(root.error().message.find("both marked default") != std::string::npos);
 
-  h.repo.write("repro.lua", "");
+  h.repo.write("repd.lua", "");
   h.repo.write("modules/base.lua", "rp.profile { name = 'x', use = { 'y' } } return rp.module {}");
   REQUIRE(h.eval.load_root());
   auto mods = h.eval.load_modules();
   REQUIRE_FALSE(mods);
-  CHECK(mods.error().message.find("can only be used in repro.lua") != std::string::npos);
+  CHECK(mods.error().message.find("can only be used in repd.lua") != std::string::npos);
 }
 
 TEST_CASE("eval: resolve applies params, with_params and module-local src paths") {

@@ -13,7 +13,7 @@
 #include "eval/declaration.hpp"
 #include "platform/paths.hpp"
 
-namespace repro {
+namespace repd {
 
 // Fixed order of classes within a module; Post (synthesised udev reload /
 // locale-gen) runs after the last contributing step.
@@ -42,7 +42,7 @@ struct FileDesired {
   std::string tree_root;    // directory copies: the logical dest of the whole tree
 };
 
-// A `# BEGIN repro` … `# END repro` block inside a file repro does not own
+// A `# BEGIN repd` … `# END repd` block inside a file repd does not own
 // (e.g. the line in ~/.profile that loads the sh env files).
 struct BlockDesired {
   std::string logical;
@@ -51,7 +51,7 @@ struct BlockDesired {
   std::string purpose;  // preview text
 };
 
-// repro sync --upgrade: one upgrade per packages backend, before its installs.
+// repd sync --upgrade: one upgrade per packages backend, before its installs.
 // Full, or targeted (--upgrade MODULE…): the named modules' packages.
 struct UpgradeDesired {
   std::string backend;
@@ -123,4 +123,4 @@ struct Step {
   bool runs_in_this_pass() const { return check == CheckResult::NeedsChange; }
 };
 
-}  // namespace repro
+}  // namespace repd

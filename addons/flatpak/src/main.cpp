@@ -1,11 +1,11 @@
-// repro-flatpak: packages backends for flatpak (contracts/plugin-abi.md).
+// repd-flatpak: packages backends for flatpak (contracts/plugin-abi.md).
 // One backend per installation, since its privilege decides the pass it runs in:
 // `flatpak` is the system-wide installation (system pass, as root) and
 // `flatpak-user` the per-user one (`--user`, user pass). Entries are application
 // IDs (org.mozilla.firefox) or full refs (app/org.mozilla.firefox/x86_64/stable).
 // Installs and updates run on the terminal (exec_tty): runtimes are large
 // downloads and flatpak's progress is the only sign of life.
-#include <repro/plugin.h>
+#include <repd/plugin.h>
 #include <unistd.h>
 
 #include <set>
@@ -16,8 +16,8 @@
 
 namespace {
 
-const repro_host* g_host = nullptr;
-const repro_host_api* g_api = nullptr;
+const repd_host* g_host = nullptr;
+const repd_host_api* g_api = nullptr;
 
 struct Installation {
   const char* backend;  // registered name
@@ -59,17 +59,17 @@ Output run(const std::vector<std::string>& argv) {
   return o;
 }
 
-repro_status error(const std::string& msg) {
+repd_status error(const std::string& msg) {
   g_api->set_error(g_host, msg.c_str());
-  return REPRO_ERR;
+  return REPD_ERR;
 }
 
 // The per-user installation lives in the user's home: as root it would be root's.
-repro_status refuse_root(const Installation& in) {
-  if (!in.user || ::geteuid() != 0) return REPRO_OK;
+repd_status refuse_root(const Installation& in) {
+  if (!in.user || ::geteuid() != 0) return REPD_OK;
   return error(
       "flatpak-user installs into your home and must not run as root\n"
-      "its packages belong to the user pass: run `repro sync -u` as yourself");
+      "its packages belong to the user pass: run `repd sync -u` as yourself");
 }
 
 int probe(void*) { return ::access("/usr/bin/flatpak", X_OK) == 0 ? 1 : 0; }
@@ -82,9 +82,9 @@ std::string_view without_kind(std::string_view ref) {
   return ref;
 }
 
-repro_status installed(void* ud, const char* const* names, size_t n, unsigned char* out_flags) {
+repd_status installed(void* ud, const char* const* names, size_t n, unsigned char* out_flags) {
   const Installation& in = at(ud);
-  if (refuse_root(in) != REPRO_OK) return REPRO_ERR;
+  if (refuse_root(in) != REPD_OK) return REPD_ERR;
   // Apps and runtimes, one "<application>\t<ref>" line each.
   const Output o = run({"flatpak", "list", in.flag, "--columns=application,ref"});
   if (o.code != 0) {
@@ -100,16 +100,16 @@ repro_status installed(void* ud, const char* const* names, size_t n, unsigned ch
     have.insert(line.substr(tab + 1));
   }
   for (size_t i = 0; i < n; ++i) out_flags[i] = have.contains(without_kind(names[i])) ? 1 : 0;
-  return REPRO_OK;
+  return REPD_OK;
 }
 
-repro_status flatpak(const Installation& in, const char* op, const char* const* names, size_t n) {
-  if (refuse_root(in) != REPRO_OK) return REPRO_ERR;
+repd_status flatpak(const Installation& in, const char* op, const char* const* names, size_t n) {
+  if (refuse_root(in) != REPD_OK) return REPD_ERR;
   std::vector<std::string> argv = {"flatpak", op, in.flag, "--noninteractive", "-y"};
   if (n > 0) argv.emplace_back("--");
   for (size_t i = 0; i < n; ++i) argv.emplace_back(names[i]);
   const int code = g_api->exec_tty(g_host, c_argv(argv).data());
-  if (code == 0) return REPRO_OK;
+  if (code == 0) return REPD_OK;
   std::string hint = "flatpak's output is shown above; fix the cause and re-run";
   if (std::string_view(op) == "install") {
     hint = std::string("flatpak's output is shown above; if no remote has it, add one first: flatpak remote-add ") +
@@ -121,35 +121,45 @@ repro_status flatpak(const Installation& in, const char* op, const char* const* 
 }
 
 // Without a remote, flatpak looks the IDs up in every remote of the installation.
-repro_status install(void* ud, const char* const* names, size_t n) { return flatpak(at(ud), "install", names, n); }
+repd_status install(void* ud, const char* const* names, size_t n) {
+  return flatpak(at(ud), "install", names, n);
+}
 
-// repro sync --upgrade: every app and runtime of the installation.
-repro_status upgrade(void* ud) { return flatpak(at(ud), "update", nullptr, 0); }
+// repd sync --upgrade: every app and runtime of the installation.
+repd_status upgrade(void* ud) {
+  return flatpak(at(ud), "update", nullptr, 0);
+}
 
-// repro sync --upgrade MODULE…: apps update on their own; each runs on its runtime.
-repro_status upgrade_packages(void* ud, const char* const* names, size_t n) {
+// repd sync --upgrade MODULE…: apps update on their own; each runs on its runtime.
+repd_status upgrade_packages(void* ud, const char* const* names, size_t n) {
   return flatpak(at(ud), "update", names, n);
 }
 
-repro_status remove(void* ud, const char* const* names, size_t n) { return flatpak(at(ud), "uninstall", names, n); }
+repd_status remove(void* ud, const char* const* names, size_t n) {
+  return flatpak(at(ud), "uninstall", names, n);
+}
 
 // No refresh: flatpak fetches remote metadata on every install and update.
-const repro_packages_vt kVtable = {probe, installed, install, remove, nullptr, upgrade, upgrade_packages, nullptr};
+const repd_packages_vt kVtable = {probe,   installed, install,          remove,
+                                  nullptr, upgrade,   upgrade_packages, nullptr};
 
 }  // namespace
 
-extern "C" int repro_plugin_abi(void) { return REPRO_PLUGIN_ABI; }
+extern "C" int repd_plugin_abi(void) {
+  return REPD_PLUGIN_ABI;
+}
 
-extern "C" int repro_plugin_init(int abi, const repro_host* host, const repro_host_api* api,
-                                 repro_registrar* reg, const repro_registrar_api* reg_api) {
-  if (abi != REPRO_PLUGIN_ABI) return 1;
+extern "C" int repd_plugin_init(int abi, const repd_host* host, const repd_host_api* api,
+                                repd_registrar* reg, const repd_registrar_api* reg_api) {
+  if (abi != REPD_PLUGIN_ABI) return 1;
   g_host = host;
   g_api = api;
   void* system = const_cast<Installation*>(&kSystem);
   void* user = const_cast<Installation*>(&kUser);
-  if (reg_api->register_packages(reg, kSystem.backend, REPRO_ADDON_VERSION, REPRO_PRIV_SYSTEM, &kVtable, system) !=
-      0) {
+  if (reg_api->register_packages(reg, kSystem.backend, REPD_ADDON_VERSION, REPD_PRIV_SYSTEM,
+                                 &kVtable, system) != 0) {
     return 1;
   }
-  return reg_api->register_packages(reg, kUser.backend, REPRO_ADDON_VERSION, REPRO_PRIV_USER, &kVtable, user);
+  return reg_api->register_packages(reg, kUser.backend, REPD_ADDON_VERSION, REPD_PRIV_USER,
+                                    &kVtable, user);
 }

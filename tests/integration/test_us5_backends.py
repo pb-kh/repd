@@ -4,10 +4,10 @@ import os
 import shutil
 import sqlite3
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class Backends(ReproTestCase):
+class Backends(RepdTestCase):
     fixture = "needs-pkgs"
 
     def setUp(self):
@@ -44,7 +44,7 @@ class Backends(ReproTestCase):
 
     def test_two_packages_backends_in_one_module(self):
         d = self.sb.plugin_dir()
-        shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], d / "librepro-native.so")
+        shutil.copy(os.environ["REPD_NATIVE_PLUGIN"], d / "librepd-native.so")
         r = self.sb.run("plugins", "list")
         self.assertOk(r)
         lines = r.out.splitlines()
@@ -73,7 +73,7 @@ class Backends(ReproTestCase):
 
     def test_upgrade_skips_backends_without_the_operation(self):
         d = self.sb.plugin_dir()
-        shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], d / "librepro-native.so")
+        shutil.copy(os.environ["REPD_NATIVE_PLUGIN"], d / "librepd-native.so")
         self.sb.write("modules/dev/c++.lua", 'return rp.module { packages = { "clang", "native-fake:htop" } }')
         r = self.sb.run("sync", "-u", "--upgrade", "--dry-run")
         self.assertOk(r)
@@ -88,7 +88,7 @@ class Backends(ReproTestCase):
 
     def test_upgrade_with_modules_upgrades_only_their_installed_packages(self):
         self.sb.write("modules/dev/go.lua", 'return rp.module { packages = { "go" } }')
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "fake")\n'
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "fake")\n'
                       'rp.profile { name = "main", default = true, use = { "dev/c++", "dev/go" } }\n')
         self.sb.write("modules/dev/c++.lua", 'return rp.module { packages = { "clang" } }')
         self.assertOk(self.sb.run("sync", "-u"))
@@ -100,7 +100,7 @@ class Backends(ReproTestCase):
         self.assertIn("+ packages fake: install cmake", r.out)
         self.assertNotIn("all installed", r.out)
         self.assertLess(r.out.index("ok    dev/c++/upgrade/fake"), r.out.index("ok    dev/c++/packages/fake"))
-        con = sqlite3.connect(self.sb.home / ".local/state/repro/repro.db")
+        con = sqlite3.connect(self.sb.home / ".local/state/repd/repd.db")
         detail = con.execute("SELECT detail FROM steps WHERE step_id = 'dev/c++/upgrade/fake'").fetchone()[0]
         con.close()
         self.assertIn('upgraded={"clang"}', detail.replace(" ", ""))
@@ -117,30 +117,30 @@ class Backends(ReproTestCase):
 
     def test_upgrade_with_modules_skips_backends_without_targeted_upgrades(self):
         d = self.sb.plugin_dir()
-        shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], d / "librepro-native.so")
+        shutil.copy(os.environ["REPD_NATIVE_PLUGIN"], d / "librepd-native.so")
         self.sb.write("modules/dev/c++.lua", 'return rp.module { packages = { "clang", "native-fake:htop" } }')
         r = self.sb.run("sync", "-u", "--upgrade", "dev/c++", "--dry-run")
         self.assertOk(r)
         self.assertIn("warning: --upgrade: packages backend native-fake cannot upgrade single packages; "
                       "skipped htop", r.err)
 
-    def test_only_librepro_files_are_loaded(self):
+    def test_only_librepd_files_are_loaded(self):
         d = self.sb.plugin_dir()
-        shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], d / "native.so")
-        shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], d / "libother-native.so")
+        shutil.copy(os.environ["REPD_NATIVE_PLUGIN"], d / "native.so")
+        shutil.copy(os.environ["REPD_NATIVE_PLUGIN"], d / "libother-native.so")
         r = self.sb.run("plugins", "list")
         self.assertOk(r)
         self.assertNotIn("native-fake", r.out)
-        user = self.sb.home / ".local/lib/repro"
+        user = self.sb.home / ".local/lib/repd"
         user.mkdir(parents=True)
-        shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], user / "librepro-native.so")
+        shutil.copy(os.environ["REPD_NATIVE_PLUGIN"], user / "librepd-native.so")
         r = self.sb.run("plugins", "list")
-        self.assertRegex(r.out, r"packages\s+native-fake\s+9\.9\.9\s+1\s+user\s+~/\.local/lib/repro/librepro-native\.so")
+        self.assertRegex(r.out, r"packages\s+native-fake\s+9\.9\.9\s+1\s+user\s+~/\.local/lib/repd/librepd-native\.so")
 
     def test_backend_option_selects_by_name(self):
         d = self.sb.plugin_dir()
-        shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], d / "librepro-native.so")
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "native-fake")\n'
+        shutil.copy(os.environ["REPD_NATIVE_PLUGIN"], d / "librepd-native.so")
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "native-fake")\n'
                       'rp.profile { name = "main", default = true, use = { "dev/c++" } }\n')
         r = self.sb.run("sync", "-u", "--dry-run")
         self.assertOk(r)

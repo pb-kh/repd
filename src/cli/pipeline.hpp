@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 
-#include <repro/config.hpp>
+#include <repd/config.hpp>
 
 #include "apply/checks.hpp"
 #include "eval/evaluate.hpp"
@@ -23,12 +23,12 @@
 #include "state/db.hpp"
 #include "state/ledger.hpp"
 
-namespace repro {
+namespace repd {
 
 struct GlobalOptions {
   std::optional<std::string> config;
   bool no_color = false;
-  std::vector<std::string> options;  // --option KEY=VALUE, over rp.option() in repro.lua
+  std::vector<std::string> options;  // --option KEY=VALUE, over rp.option() in repd.lua
 };
 
 class Session {
@@ -52,11 +52,11 @@ class Session {
   std::vector<std::string> option_flags;  // --option KEY=VALUE
   // rp.packages.<op>(names) from Lua, routed per name like `packages` entries.
   Result<Value> dispatch_packages(const std::string& op, const List& args);
-  std::string db_path(Mode m) const { return paths.state_dir(m) + "/repro.db"; }
+  std::string db_path(Mode m) const { return paths.state_dir(m) + "/repd.db"; }
 
  private:
   Session(Paths p, Mode m) : paths(std::move(p)), mode(m) {}
-  // Validates plugin options from repro.lua and applies --option overrides.
+  // Validates plugin options from repd.lua and applies --option overrides.
   Status apply_options();
 };
 
@@ -95,4 +95,4 @@ Result<Scope> select_roots(const Session& s, const PlanRequest& req);
 
 Result<std::map<std::string, std::string>> parse_provider_flags(const std::vector<std::string>& flags);
 
-}  // namespace repro
+}  // namespace repd

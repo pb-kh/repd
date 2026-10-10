@@ -1,9 +1,9 @@
 """US5 acceptance 1: files/env work with zero backends installed."""
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class NoBackends(ReproTestCase):
+class NoBackends(RepdTestCase):
     fixture = "files-only"
 
     def test_files_only_repo_succeeds(self):

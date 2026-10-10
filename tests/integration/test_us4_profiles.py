@@ -1,9 +1,9 @@
 """US4 acceptance 3-5: a profile selects its modules, params and provider overrides."""
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class Profiles(ReproTestCase):
+class Profiles(RepdTestCase):
     fixture = "profiles"
 
     def test_laptop_profile(self):
@@ -33,8 +33,8 @@ class Profiles(ReproTestCase):
 
     def test_changing_a_profile_param_makes_the_module_stale(self):
         self.assertOk(self.sb.run("sync", "-u"))
-        text = (self.sb.config / "repro.lua").read_text().replace("font_size = 14", "font_size = 16")
-        self.sb.write("repro.lua", text)
+        text = (self.sb.config / "repd.lua").read_text().replace("font_size = 14", "font_size = 16")
+        self.sb.write("repd.lua", text)
         st = self.sb.run("status")
         self.assertRegex(st.out, r"terminal\s+stale")
         self.assertRegex(st.out, r"core\s+applied")
@@ -42,9 +42,9 @@ class Profiles(ReproTestCase):
         self.assertIn("~ files   ~/.config/term.conf  update (content differs)", r.out)
 
     def test_invalid_param_names_module_param_value_and_allowed(self):
-        text = (self.sb.config / "repro.lua").read_text().replace(
+        text = (self.sb.config / "repd.lua").read_text().replace(
             "params = { font_size = 14 }", 'params = { font_size = 14, theme = "blue" }')
-        self.sb.write("repro.lua", text)
+        self.sb.write("repd.lua", text)
         r = self.sb.run("sync", "-u", "--dry-run")
         self.assertError(r, "E_PARAM")
         for needle in ("terminal", "theme", '"blue"', '"dark", "light"'):

@@ -4,7 +4,7 @@
 
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 bool valid_module_name(std::string_view name) {
   if (name.empty()) return false;
@@ -34,4 +34,4 @@ std::string suggest_module(std::string_view name, std::span<const std::string> k
   return c.empty() ? std::string{} : std::format("did you mean '{}'?", c);
 }
 
-}  // namespace repro
+}  // namespace repd

@@ -18,7 +18,7 @@
 #include "util/errors.hpp"
 #include "util/value.hpp"
 
-namespace repro {
+namespace repd {
 
 struct CheckContext {
   CheckContext(const Paths& p, const Fs& f) : paths(p), fs(f) {}
@@ -46,7 +46,7 @@ Status check_all(std::vector<Step>& steps, CheckContext& ctx);
 // Shared file-state helpers (also used by the executors).
 struct LocaleGen {
   std::vector<std::string> before;  // lines before the managed block (or all lines)
-  std::vector<std::string> block;   // lines inside # BEGIN repro / # END repro
+  std::vector<std::string> block;   // lines inside # BEGIN repd / # END repd
   std::vector<std::string> after;
   bool has_block = false;
   std::set<std::string> active;     // every uncommented, non-empty line
@@ -55,4 +55,4 @@ LocaleGen parse_locale_gen(const std::string& text);
 std::string render_locale_gen(const LocaleGen& gen, const std::vector<std::string>& block);
 std::optional<std::string> locale_conf_lang(const std::string& text);
 
-}  // namespace repro
+}  // namespace repd

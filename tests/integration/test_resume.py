@@ -1,11 +1,11 @@
 """SC-004: an interrupted apply is resumable — re-running completes the work and
 no step is applied twice (research R15)."""
 
-from conftest import ReproTestCase, journal_steps, main
+from conftest import RepdTestCase, journal_steps, main
 
 MODULES = {
     "modules/a.lua": 'return rp.module { files = { { dest = "~/a1", content = "1" }, { dest = "~/a2", content = "2" } } }',
-    # Step k: the action interrupts repro (SIGINT to its parent) after doing its work.
+    # Step k: the action interrupts repd (SIGINT to its parent) after doing its work.
     "modules/b.lua": """
 return rp.module {
   requires = { "a" },
@@ -17,14 +17,14 @@ return rp.module {
 }
 
 
-class Resume(ReproTestCase):
+class Resume(RepdTestCase):
     fixture = "files-only"
 
     def setUp(self):
         super().setUp()
         for rel, text in MODULES.items():
             self.sb.write(rel, text)
-        self.sb.write("repro.lua", 'rp.profile { name = "main", default = true, use = { "c" } }')
+        self.sb.write("repd.lua", 'rp.profile { name = "main", default = true, use = { "c" } }')
         self.sb.add_plugin("fake-packages.lua")
 
     def test_sigint_then_resume(self):

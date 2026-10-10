@@ -3,7 +3,7 @@
 #include <format>
 #include <map>
 
-namespace repro {
+namespace repd {
 
 namespace {
 
@@ -37,11 +37,11 @@ std::string module_status(const Plan& plan, const std::string& module) {
 }  // namespace
 
 std::string other_pass_hint(Mode mode) {
-  return mode == Mode::User ? "sudo repro sync -s" : "repro sync -u";
+  return mode == Mode::User ? "sudo repd sync -s" : "repd sync -u";
 }
 
 std::string render_plan(const Plan& plan, const Style& st) {
-  std::string out = std::format("repro plan — mode: {} — profile: {}\n", to_string(plan.mode),
+  std::string out = std::format("repd plan — mode: {} — profile: {}\n", to_string(plan.mode),
                                 plan.profile.value_or("(none)"));
   if (!plan.providers.empty()) {
     out += "providers:\n";
@@ -138,4 +138,4 @@ std::string render_apply_summary(const Plan& plan, const ApplyResult& r) {
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

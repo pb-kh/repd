@@ -1,4 +1,4 @@
-"""The repro-yay add-on (librepro-yay.so) against stub yay and sudo.
+"""The repd-yay add-on (librepd-yay.so) against stub yay and sudo.
 
 yay runs on the terminal: its output reaches the user directly and sudo's
 password prompt is shown there. Without a terminal and without cached sudo
@@ -11,7 +11,7 @@ import select
 import shutil
 import time
 
-from conftest import REPRO, ReproTestCase, main
+from conftest import REPD, RepdTestCase, main
 
 YAY = r"""#!/bin/sh
 S="$YAY_STUB"
@@ -42,7 +42,7 @@ exit $rc
 """
 
 # Real sudo prompts on /dev/tty; the stub uses stderr/stdin, which are the same
-# terminal when repro runs on one.
+# terminal when repd runs on one.
 SUDO = r"""#!/bin/sh
 S="$YAY_STUB"
 echo "sudo $*" >> "$S/log"
@@ -58,19 +58,19 @@ esac
 
 PROFILE = 'rp.profile { name = "main", default = true, use = { "aur" } }\n'
 # Most tests skip the PKGBUILD review so they can run without a terminal.
-REPRO_LUA = 'rp.option("packages.default_backend", "yay")\nrp.option("yay.review", "skip")\n' + PROFILE
+REPD_LUA = 'rp.option("packages.default_backend", "yay")\nrp.option("yay.review", "skip")\n' + PROFILE
 
 YAY_ARGS = "--needed --noconfirm --answerclean None --answerdiff None --answeredit None --sudoloop --"
 REVIEW_ARGS = "--needed --diffmenu --noanswerdiff --answerclean None --answeredit None --sudoloop --"
 
 
-class Yay(ReproTestCase):
+class Yay(RepdTestCase):
     def setUp(self):
         super().setUp()
-        plugin = os.environ.get("REPRO_YAY_PLUGIN")
+        plugin = os.environ.get("REPD_YAY_PLUGIN")
         if not plugin:
             self.skipTest("built with -Daddons=disabled")
-        shutil.copy(plugin, self.sb.plugin_dir() / "librepro-yay.so")
+        shutil.copy(plugin, self.sb.plugin_dir() / "librepd-yay.so")
         self.state = self.sb.tmp / "yay"
         bin_dir = self.sb.tmp / "bin"
         self.state.mkdir()
@@ -81,7 +81,7 @@ class Yay(ReproTestCase):
             p.chmod(0o755)
         self.sb.env["PATH"] = f"{bin_dir}:{self.sb.env['PATH']}"
         self.sb.env["YAY_STUB"] = str(self.state)
-        self.sb.write("repro.lua", REPRO_LUA)
+        self.sb.write("repd.lua", REPD_LUA)
         self.packages("neovim", "paru-bin")
 
     def packages(self, *names):
@@ -113,9 +113,9 @@ class Yay(ReproTestCase):
     def test_no_terminal_and_no_credentials_fails_before_running_yay(self):
         r = self.sb.run("sync", "-u")
         self.assertError(r, "E_STEP", exit_code=1)
-        self.assertIn("yay needs sudo for pacman, but sudo wants a password and repro is not running in a terminal",
+        self.assertIn("yay needs sudo for pacman, but sudo wants a password and repd is not running in a terminal",
                       r.err)
-        self.assertIn("hint: run `repro sync -u` in a terminal, or authenticate first with `sudo -v`", r.err)
+        self.assertIn("hint: run `repd sync -u` in a terminal, or authenticate first with `sudo -v`", r.err)
         self.assertNotIn("yay -S", self.log())
         self.assertEqual(self.installed(), [])
 
@@ -131,7 +131,7 @@ class Yay(ReproTestCase):
         code, transcript = self.run_on_terminal("hunter2")
         self.assertEqual(code, 0, transcript)
         user = self.sb.env["USER"]
-        self.assertIn(f"[repro] sudo password for {user} (yay installs packages): ", transcript)
+        self.assertIn(f"[repd] sudo password for {user} (yay installs packages): ", transcript)
         self.assertIn(":: building neovim paru-bin", transcript)
         self.assertEqual(self.installed(), ["neovim", "paru-bin"])
 
@@ -188,25 +188,25 @@ class Yay(ReproTestCase):
 
     def test_review_is_the_default_and_needs_a_terminal(self):
         (self.state / "cached").touch()
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "yay")\n' + PROFILE)
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "yay")\n' + PROFILE)
         r = self.sb.run("sync", "-u")
         self.assertError(r, "E_STEP", exit_code=1)
         self.assertIn('yay.review is "diff": yay shows AUR build scripts and asks before building', r.err)
-        self.assertIn("hint: run `repro sync -u` in a terminal, or skip the review for this run: "
+        self.assertIn("hint: run `repd sync -u` in a terminal, or skip the review for this run: "
                       "--option yay.review=skip", r.err)
         self.assertNotIn("yay -S", self.log())
 
     def test_review_runs_yay_with_its_diff_menu_on_the_terminal(self):
         (self.state / "cached").touch()
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "yay")\n' + PROFILE)
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "yay")\n' + PROFILE)
         code, transcript = self.run_on_terminal(None)
         self.assertEqual(code, 0, transcript)
         self.assertIn(f"yay -S {REVIEW_ARGS} neovim paru-bin", self.log())
         self.assertNotIn("--noconfirm", self.log())
 
-    def test_option_flag_overrides_repro_lua(self):
+    def test_option_flag_overrides_repd_lua(self):
         (self.state / "cached").touch()
-        self.sb.write("repro.lua", 'rp.option("yay.review", "diff")\n' + PROFILE)
+        self.sb.write("repd.lua", 'rp.option("yay.review", "diff")\n' + PROFILE)
         r = self.sb.run("sync", "-u", "--option", "packages.default_backend=yay", "--option", "yay.review=skip")
         self.assertOk(r)
         self.assertIn(f"yay -S {YAY_ARGS} neovim paru-bin", self.log())
@@ -230,21 +230,21 @@ class Yay(ReproTestCase):
         self.assertIn("packages.backend was renamed to packages.default_backend", r.err)
         self.assertIn("--option packages.default_backend=yay", r.err)
 
-    def test_repro_lua_options_of_absent_addons_are_ignored(self):
+    def test_repd_lua_options_of_absent_addons_are_ignored(self):
         (self.state / "cached").touch()
-        self.sb.write("repro.lua", REPRO_LUA + 'rp.option("flatpak.scope", "user")\n')
+        self.sb.write("repd.lua", REPD_LUA + 'rp.option("flatpak.scope", "user")\n')
         self.assertOk(self.sb.run("sync", "-u"))
-        self.sb.write("repro.lua", REPRO_LUA + 'rp.option("yay.reveiw", "skip")\n')
+        self.sb.write("repd.lua", REPD_LUA + 'rp.option("yay.reveiw", "skip")\n')
         r = self.sb.run("sync", "-u")
         self.assertError(r, "E_CONFIG")
-        self.assertIn("repro.lua: unknown option 'yay.reveiw'", r.err)
+        self.assertIn("repd.lua: unknown option 'yay.reveiw'", r.err)
 
     def run_on_terminal(self, password, timeout=30):
-        """Runs `repro sync -u` on a pseudo-terminal, answering sudo's prompt."""
+        """Runs `repd sync -u` on a pseudo-terminal, answering sudo's prompt."""
         pid, fd = pty.fork()
         if pid == 0:  # child
             os.chdir(self.sb.tmp)
-            os.execve(REPRO, [REPRO, "sync", "-u"], self.sb.env_for())
+            os.execve(REPD, [REPD, "sync", "-u"], self.sb.env_for())
         transcript, answered = b"", False
         deadline = time.time() + timeout
         while time.time() < deadline:

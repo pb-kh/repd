@@ -1,79 +1,79 @@
-# Maintainer: repro developers
+# Maintainer: repd developers
 # Split package: the core binary and the first-party backend add-ons ship
 # separately (research R17); the core works with zero add-ons.
-pkgbase=repro
-pkgname=(repro repro-pacman repro-systemd repro-openrc repro-yay repro-flatpak)
+pkgbase=repd
+pkgname=(repd repd-pacman repd-systemd repd-openrc repd-yay repd-flatpak)
 pkgver=0.1.0
 pkgrel=1
 pkgdesc='Declarative, reproducible environment configuration in Lua'
 arch=(x86_64 aarch64)
-url='https://example.invalid/repro'
+url='https://example.invalid/repd'
 license=(MIT)
 makedepends=(meson ninja python)
-source=("repro-$pkgver.tar.gz")
+source=("repd-$pkgver.tar.gz")
 sha256sums=('SKIP')
 
 build() {
-  cd "repro-$pkgver"
+  cd "repd-$pkgver"
   meson subprojects download
-  arch-meson build --wrap-mode=nodownload -Dtest_hooks=false -Daddons=enabled -Dplugin_dir=/usr/lib/repro
+  arch-meson build --wrap-mode=nodownload -Dtest_hooks=false -Daddons=enabled -Dplugin_dir=/usr/lib/repd
   meson compile -C build
 }
 
 check() {
-  cd "repro-$pkgver"
+  cd "repd-$pkgver"
   meson test -C build --suite unit --suite lua
 }
 
 _install_into() {
-  cd "$srcdir/repro-$pkgver"
+  cd "$srcdir/repd-$pkgver"
   DESTDIR="$srcdir/staging" meson install -C build --no-rebuild >/dev/null
 }
 
-package_repro() {
+package_repd() {
   depends=(glibc)
-  optdepends=('repro-pacman: package management via pacman'
-              'repro-systemd: service management via systemd'
-              'repro-openrc: service management via OpenRC'
-              'repro-yay: repo and AUR packages via yay'
-              'repro-flatpak: flatpak apps, system-wide and per user')
+  optdepends=('repd-pacman: package management via pacman'
+              'repd-systemd: service management via systemd'
+              'repd-openrc: service management via OpenRC'
+              'repd-yay: repo and AUR packages via yay'
+              'repd-flatpak: flatpak apps, system-wide and per user')
   _install_into
-  install -Dm755 "$srcdir/staging/usr/bin/repro" "$pkgdir/usr/bin/repro"
-  install -Dm644 "$srcdir/staging/usr/include/repro/plugin.h" "$pkgdir/usr/include/repro/plugin.h"
-  install -Dm644 docs/lua-api.md "$pkgdir/usr/share/doc/repro/lua-api.md"
+  install -Dm755 "$srcdir/staging/usr/bin/repd" "$pkgdir/usr/bin/repd"
+  install -Dm644 "$srcdir/staging/usr/include/repd/plugin.h" "$pkgdir/usr/include/repd/plugin.h"
+  install -Dm644 docs/lua-api.md "$pkgdir/usr/share/doc/repd/lua-api.md"
 }
 
-package_repro-pacman() {
-  pkgdesc='repro packages backend for pacman'
-  depends=(repro pacman)
+package_repd-pacman() {
+  pkgdesc='repd packages backend for pacman'
+  depends=(repd pacman)
   _install_into
-  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-pacman.so" "$pkgdir/usr/lib/repro/librepro-pacman.so"
+  install -Dm755 "$srcdir/staging/usr/lib/repd/librepd-pacman.so" "$pkgdir/usr/lib/repd/librepd-pacman.so"
 }
 
-package_repro-systemd() {
-  pkgdesc='repro services backend for systemd'
-  depends=(repro systemd)
+package_repd-systemd() {
+  pkgdesc='repd services backend for systemd'
+  depends=(repd systemd)
   _install_into
-  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-systemd.so" "$pkgdir/usr/lib/repro/librepro-systemd.so"
+  install -Dm755 "$srcdir/staging/usr/lib/repd/librepd-systemd.so" "$pkgdir/usr/lib/repd/librepd-systemd.so"
 }
 
-package_repro-openrc() {
-  pkgdesc='repro services backend for OpenRC'
-  depends=(repro openrc)
+package_repd-openrc() {
+  pkgdesc='repd services backend for OpenRC'
+  depends=(repd openrc)
   _install_into
-  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-openrc.so" "$pkgdir/usr/lib/repro/librepro-openrc.so"
+  install -Dm755 "$srcdir/staging/usr/lib/repd/librepd-openrc.so" "$pkgdir/usr/lib/repd/librepd-openrc.so"
 }
 
-package_repro-yay() {
-  pkgdesc='repro packages backend for yay (repo and AUR packages)'
-  depends=(repro yay)
+package_repd-yay() {
+  pkgdesc='repd packages backend for yay (repo and AUR packages)'
+  depends=(repd yay)
   _install_into
-  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-yay.so" "$pkgdir/usr/lib/repro/librepro-yay.so"
+  install -Dm755 "$srcdir/staging/usr/lib/repd/librepd-yay.so" "$pkgdir/usr/lib/repd/librepd-yay.so"
 }
 
-package_repro-flatpak() {
-  pkgdesc='repro packages backends for flatpak (system and per-user installations)'
-  depends=(repro flatpak)
+package_repd-flatpak() {
+  pkgdesc='repd packages backends for flatpak (system and per-user installations)'
+  depends=(repd flatpak)
   _install_into
-  install -Dm755 "$srcdir/staging/usr/lib/repro/librepro-flatpak.so" "$pkgdir/usr/lib/repro/librepro-flatpak.so"
+  install -Dm755 "$srcdir/staging/usr/lib/repd/librepd-flatpak.so" "$pkgdir/usr/lib/repd/librepd-flatpak.so"
 }

@@ -1,8 +1,8 @@
 """Sandboxed integration harness (research R18, Constitution IV).
 
-Every test runs the real `repro` binary against a copy of a fixture repo in a
-fresh temp dir: HOME and XDG_* point into it, REPRO_SYSROOT redirects every
-system path, REPRO_TEST_ASSUME_ROOT replaces the euid check only when asked,
+Every test runs the real `repd` binary against a copy of a fixture repo in a
+fresh temp dir: HOME and XDG_* point into it, REPD_SYSROOT redirects every
+system path, REPD_TEST_ASSUME_ROOT replaces the euid check only when asked,
 and logging stubs for useradd/usermod/locale-gen/udevadm come first on PATH.
 Nothing here ever touches the live system. Python stdlib only.
 """
@@ -18,8 +18,8 @@ import time
 import unittest
 from pathlib import Path
 
-REPRO = os.environ.get("REPRO_BIN", "")
-SOURCE_ROOT = Path(os.environ.get("REPRO_SOURCE_ROOT", Path(__file__).resolve().parents[2]))
+REPD = os.environ.get("REPD_BIN", "")
+SOURCE_ROOT = Path(os.environ.get("REPD_SOURCE_ROOT", Path(__file__).resolve().parents[2]))
 FIXTURES = SOURCE_ROOT / "tests" / "fixtures"
 STUBS = SOURCE_ROOT / "tests" / "integration" / "stubs"
 
@@ -34,12 +34,12 @@ class Result:
 
 class Sandbox:
     def __init__(self, fixture=None):
-        self.tmp = Path(tempfile.mkdtemp(prefix="repro-it-"))
+        self.tmp = Path(tempfile.mkdtemp(prefix="repd-it-"))
         self.home = self.tmp / "home"
         self.root = self.tmp / "root"
         self.home.mkdir()
         self.root.mkdir()
-        self.config = self.home / ".config" / "repro"
+        self.config = self.home / ".config" / "repd"
         if fixture is not None:
             shutil.copytree(FIXTURES / "repos" / fixture, self.config)
         self.env = {
@@ -47,7 +47,7 @@ class Sandbox:
             "USER": os.environ.get("USER", "tester"),
             "XDG_CONFIG_HOME": str(self.home / ".config"),
             "XDG_STATE_HOME": str(self.home / ".local" / "state"),
-            "REPRO_SYSROOT": str(self.root),
+            "REPD_SYSROOT": str(self.root),
             "PATH": f"{STUBS}:{os.environ.get('PATH', '/usr/bin:/bin')}",
             "NO_COLOR": "1",
             "LANG": "C.UTF-8",
@@ -70,29 +70,29 @@ class Sandbox:
     def env_for(self, root=False, extra=None):
         env = dict(self.env)
         if root:
-            env["REPRO_TEST_ASSUME_ROOT"] = "1"
+            env["REPD_TEST_ASSUME_ROOT"] = "1"
         if extra:
             env.update(extra)
         return env
 
     def run(self, *args, root=False, extra_env=None, stdin=None, timeout=60):
-        p = subprocess.run([REPRO, *args], env=self.env_for(root, extra_env), cwd=self.tmp,
+        p = subprocess.run([REPD, *args], env=self.env_for(root, extra_env), cwd=self.tmp,
                            input=stdin, capture_output=True, text=True, timeout=timeout,
                            stdin=None if stdin is not None else subprocess.DEVNULL)
         return Result(p.returncode, p.stdout, p.stderr)
 
     def spawn(self, *args, root=False, extra_env=None):
-        return subprocess.Popen([REPRO, *args], env=self.env_for(root, extra_env), cwd=self.tmp,
+        return subprocess.Popen([REPD, *args], env=self.env_for(root, extra_env), cwd=self.tmp,
                                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE, text=True)
 
     def run_tty(self, *args, answers=(), root=False, timeout=30):
-        """Runs repro on a pseudo-terminal; answers each provider prompt in order.
+        """Runs repd on a pseudo-terminal; answers each provider prompt in order.
         Returns (exit code, transcript, number of prompts seen)."""
         pid, fd = pty.fork()
         if pid == 0:  # child
             os.chdir(self.tmp)
-            os.execve(REPRO, [REPRO, *args], self.env_for(root))
+            os.execve(REPD, [REPD, *args], self.env_for(root))
         transcript, prompts, pending = b"", 0, list(answers)
         deadline = time.time() + timeout
         while time.time() < deadline:
@@ -129,7 +129,7 @@ class Sandbox:
 
     def plugin_dir(self):
         """The system plugin dir (build option -Dplugin_dir) inside the sysroot."""
-        d = self.sys_path(os.environ.get("REPRO_PLUGIN_DIR", "/usr/lib/repro"))
+        d = self.sys_path(os.environ.get("REPD_PLUGIN_DIR", "/usr/lib/repd"))
         d.mkdir(parents=True, exist_ok=True)
         return d
 
@@ -151,12 +151,12 @@ class Sandbox:
         return out
 
 
-class ReproTestCase(unittest.TestCase):
+class RepdTestCase(unittest.TestCase):
     fixture = None
 
     def setUp(self):
-        if not REPRO or not os.path.exists(REPRO):
-            self.skipTest("REPRO_BIN not set (run via meson test)")
+        if not REPD or not os.path.exists(REPD):
+            self.skipTest("REPD_BIN not set (run via meson test)")
         self.sb = Sandbox(self.fixture)
         self.addCleanup(self.sb.cleanup)
 
@@ -174,7 +174,7 @@ class ReproTestCase(unittest.TestCase):
 
 
 def journal_steps(text):
-    """Parses `repro journal` step lines into (status, step_id) tuples."""
+    """Parses `repd journal` step lines into (status, step_id) tuples."""
     out = []
     for line in text.splitlines():
         m = re.match(r"^\s+\d+\s+(ok|skip|FAIL|interrupted|blocked)\s+(\S+)", line)

@@ -13,7 +13,7 @@
 
 extern char** environ;
 
-namespace repro {
+namespace repd {
 namespace {
 
 std::atomic<int> g_child{0};
@@ -32,7 +32,7 @@ std::string tail(const std::string& s, std::size_t max) {
 }
 
 Result<ProcResult> run_process(const std::vector<std::string>& argv, const ProcOptions& opts) {
-  if (argv.empty()) return fail(ec::kStep, "empty command", "this is a bug in repro");
+  if (argv.empty()) return fail(ec::kStep, "empty command", "this is a bug in repd");
   int in_pipe[2] = {-1, -1}, out_pipe[2] = {-1, -1}, err_pipe[2] = {-1, -1};
   if ((!opts.inherit_input && ::pipe2(in_pipe, O_CLOEXEC) != 0) ||
       (!opts.inherit_output &&
@@ -109,4 +109,4 @@ Result<ProcResult> run_shell(const std::string& cmd, const ProcOptions& opts) {
   return run_process({"/bin/sh", "-c", cmd}, opts);
 }
 
-}  // namespace repro
+}  // namespace repd

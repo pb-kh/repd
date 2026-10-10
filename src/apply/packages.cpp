@@ -1,14 +1,14 @@
-// Package installs through each entry's backend (FR-020); repro records what it
+// Package installs through each entry's backend (FR-020); repd records what it
 // installed (managed_packages) but never removes packages in v1. Installs never
 // refresh the package databases on their own: a refresh without an upgrade is a
-// partial upgrade, which Arch does not support. `repro sync --upgrade` plans a
+// partial upgrade, which Arch does not support. `repd sync --upgrade` plans a
 // full upgrade per backend before its installs instead.
 #include <format>
 
 #include "apply/executors.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 Result<StepOutcome> apply_packages(const Step& s, ApplyContext& ctx) {
   const auto& d = std::get<PackagesDesired>(s.desired);
@@ -43,4 +43,4 @@ Result<StepOutcome> apply_upgrade(const Step& s, ApplyContext& ctx) {
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

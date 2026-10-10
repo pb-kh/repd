@@ -12,7 +12,7 @@
 #include "platform/users.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 enum class Mode { User, System };
 std::string_view to_string(Mode m);
@@ -60,4 +60,4 @@ class Paths {
   bool is_root_ = false;
 };
 
-}  // namespace repro
+}  // namespace repd

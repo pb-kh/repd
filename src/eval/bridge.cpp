@@ -4,10 +4,10 @@
 #include <format>
 #include <set>
 
-namespace repro {
+namespace repd {
 
 void push_value(lua_State* L, const Value& v) {
-  luaL_checkstack(L, 4, "repro bridge");
+  luaL_checkstack(L, 4, "repd bridge");
   if (v.is_nil()) {
     lua_pushnil(L);
   } else if (v.is_bool()) {
@@ -61,7 +61,7 @@ Result<Value> convert(lua_State* L, int index, std::set<const void*>& active, in
   if (active.contains(ptr)) return fail(ec::kConfig, "data contains a cycle", "");
   active.insert(ptr);
   const int abs = index < 0 ? lua_gettop(L) + index + 1 : index;
-  luaL_checkstack(L, 4, "repro bridge");
+  luaL_checkstack(L, 4, "repd bridge");
 
   // Sequence 1..n -> List; all-string keys -> Map.
   std::size_t count = 0;
@@ -144,4 +144,4 @@ Error error_from_lua(lua_State* L, int index) {
                "fix the Lua error at the reported location"};
 }
 
-}  // namespace repro
+}  // namespace repd

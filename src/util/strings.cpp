@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <cctype>
 
-namespace repro {
+namespace repd {
 
 std::string_view trim(std::string_view s) {
   const auto is_space = [](char c) { return c == ' ' || c == '\t' || c == '\n' || c == '\r'; };
@@ -121,4 +121,4 @@ std::string shell_quote(std::string_view s) {
   return out + "'";
 }
 
-}  // namespace repro
+}  // namespace repd

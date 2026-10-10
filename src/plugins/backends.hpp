@@ -13,7 +13,7 @@
 #include "platform/paths.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 class LuaHost;
 
@@ -46,8 +46,8 @@ class Backend {
   virtual Status remove(const std::vector<std::string>& names);
   virtual Status refresh();
   virtual bool can_upgrade() const { return false; }
-  virtual Status upgrade();  // full upgrade (repro sync --upgrade)
-  // Targeted upgrade (repro sync --upgrade MODULE…): implemented at all, may it
+  virtual Status upgrade();  // full upgrade (repd sync --upgrade)
+  // Targeted upgrade (repd sync --upgrade MODULE…): implemented at all, may it
   // run now (the error says why not), and the upgrade itself.
   virtual bool has_upgrade_packages() const { return false; }
   virtual Status can_upgrade_packages() const;
@@ -88,7 +88,7 @@ class LuaBackend final : public Backend {
   bool can_upgrade_packages_;
 };
 
-// An option a plugin declared (repro_registrar_api.declare_option).
+// An option a plugin declared (repd_registrar_api.declare_option).
 struct PluginOption {
   std::string key;  // "<backend>.<name>"
   std::vector<std::string> values;
@@ -142,4 +142,4 @@ class BackendRegistry {
 
 int origin_rank(const std::string& origin);
 
-}  // namespace repro
+}  // namespace repd

@@ -15,7 +15,7 @@
 #include "util/sha256.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 Result<std::unique_ptr<Session>> Session::open(const GlobalOptions& g, Mode mode) {
   auto paths = Paths::detect(Env::from_process(), PathsOptions{g.config});
@@ -42,7 +42,7 @@ Result<Value> Session::dispatch_packages(const std::string& op, const List& args
   if (op == "refresh") {
     if (def.empty()) {
       return fail(ec::kConfig, "rp.packages.refresh() needs a default packages backend",
-                  "set rp.option(\"packages.default_backend\", \"<backend>\") in repro.lua");
+                  "set rp.option(\"packages.default_backend\", \"<backend>\") in repd.lua");
     }
     auto b = backend(def);
     if (!b) return std::unexpected(b.error());
@@ -83,8 +83,8 @@ const std::vector<std::string> kCoreOptions = {"packages.default_backend", "serv
 
 }  // namespace
 
-// Options are core keys (checked by repro.lua's rp.option) or "<backend>.<name>"
-// keys that installed plugins declare. A repro.lua key for an add-on this host
+// Options are core keys (checked by repd.lua's rp.option) or "<backend>.<name>"
+// keys that installed plugins declare. A repd.lua key for an add-on this host
 // lacks is ignored, so one repository serves machines with different add-ons;
 // an --option key must exist.
 Status Session::apply_options() {
@@ -92,7 +92,7 @@ Status Session::apply_options() {
   std::vector<std::string> known = kCoreOptions;
   for (const auto& [k, o] : declared) known.push_back(k);
   auto check = [&](const std::string& key, const std::string& value, bool from_flag) -> Status {
-    const std::string where = from_flag ? "--option" : "repro.lua";
+    const std::string where = from_flag ? "--option" : "repd.lua";
     if (std::ranges::find(kCoreOptions, key) != kCoreOptions.end()) {
       if (key == "packages.default_backend" && (value.empty() || value == "auto")) {
         return fail(
@@ -190,8 +190,8 @@ Status Session::load() {
   // Fail-soft per plugin: report refusals, keep going with the others.
   for (const auto& rp : backends.refused()) {
     print_error(Error{std::string(ec::kPluginAbi),
-                      rp.abi >= 0 ? std::format("{} built for plugin-abi {}, this repro supports {}", rp.path,
-                                                rp.abi, REPRO_PLUGIN_ABI_VERSION)
+                      rp.abi >= 0 ? std::format("{} built for plugin-abi {}, this repd supports {}",
+                                                rp.path, rp.abi, REPD_PLUGIN_ABI_VERSION)
                                   : std::format("{} was refused: {}", rp.path, rp.reason),
                       "rebuild or update that add-on; other plugins keep working"});
   }
@@ -220,9 +220,10 @@ Result<Scope> select_roots(const Session& s, const PlanRequest& req) {
     if (scope.profile == nullptr) {
       const std::string c = closest_match(*req.profile, names);
       return fail(ec::kUnknown, std::format("unknown profile '{}'", *req.profile),
-                  !c.empty()                ? std::format("did you mean '{}'?", c)
-                  : names.empty() ? std::string("declare profiles with rp.profile { ... } in repro.lua")
-                                  : "available profiles: " + join(names, ", "));
+                  !c.empty() ? std::format("did you mean '{}'?", c)
+                  : names.empty()
+                      ? std::string("declare profiles with rp.profile { ... } in repd.lua")
+                      : "available profiles: " + join(names, ", "));
     }
   } else {
     scope.profile = s.root.default_profile();
@@ -250,7 +251,7 @@ Result<Scope> select_roots(const Session& s, const PlanRequest& req) {
                 std::format("pass --profile {} or set default = true on one profile", names.front()));
   }
   return fail(ec::kUsage, "no modules selected",
-              "name modules (repro sync -u MODULE ...) or declare a default profile in repro.lua");
+              "name modules (repd sync -u MODULE ...) or declare a default profile in repd.lua");
 }
 
 namespace {
@@ -293,8 +294,8 @@ Value fingerprint_record(const Session& s, const ResolvedModule& m, const Module
   use("services", !m.services.empty());
   return Value{Map{
       {"v", kFingerprintSchema},
-      {"repro", REPRO_VERSION},
-      {"api", REPRO_LUA_API_VERSION},
+      {"repd", REPD_VERSION},
+      {"api", REPD_LUA_API_VERSION},
       {"mode", std::string(to_string(plan.mode))},
       {"module", m.name},
       {"source", meta.source_sha256},
@@ -333,8 +334,7 @@ CheckContext make_check_context(Session& s, const Plan& plan, const PlanRequest&
   return cctx;
 }
 
-
-// repro sync --upgrade: one Upgrade step per packages backend this scope uses,
+// repd sync --upgrade: one Upgrade step per packages backend this scope uses,
 // plus the default backend, owned by the first module that uses it (else the
 // first selected module). Backends without an upgrade operation are skipped
 // with a warning.
@@ -467,8 +467,9 @@ Result<PlanOutput> make_plan(Session& s, const PlanRequest& req, const Ledger* l
   in.prompt = prompt_provider;
   for (const auto& iface : req.reselect) {
     if (!s.modules.contains(iface) || !s.modules.at(iface).is_interface()) {
-      return fail(ec::kUnknown, std::format("--reselect names '{}', which is not an interface", iface),
-                  "list interfaces with `repro list interfaces`");
+      return fail(ec::kUnknown,
+                  std::format("--reselect names '{}', which is not an interface", iface),
+                  "list interfaces with `repd list interfaces`");
     }
   }
   Resolver resolver(s.modules, in);
@@ -583,4 +584,4 @@ Result<PlanOutput> make_plan(Session& s, const PlanRequest& req, const Ledger* l
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

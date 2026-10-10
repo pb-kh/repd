@@ -5,7 +5,7 @@
 
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 Resolver::Resolver(const std::map<std::string, ModuleMeta>& modules, ResolverInputs in)
     : modules_(modules), in_(std::move(in)) {}
@@ -67,7 +67,7 @@ Result<ResolvedProvider> Resolver::resolve(const std::string& iface,
     return done(*p, "profile", false);
   }
   if (auto it = in_.pins.find(iface); it != in_.pins.end()) {
-    auto p = check_override(iface, it->second, "rp.pin in repro.lua");
+    auto p = check_override(iface, it->second, "rp.pin in repd.lua");
     if (!p) return std::unexpected(p.error());
     return done(*p, "pin", false);
   }
@@ -77,7 +77,7 @@ Result<ResolvedProvider> Resolver::resolve(const std::string& iface,
         return done(it->second.provider, "lock", false);
       }
       warnings_.push_back(std::format(
-          "repro.lock.lua records {} for {}, which no longer provides it; choosing again",
+          "repd.lock.lua records {} for {}, which no longer provides it; choosing again",
           it->second.provider, iface));
     }
   }
@@ -98,8 +98,8 @@ Result<ResolvedProvider> Resolver::resolve(const std::string& iface,
   return fail(ec::kAmbiguous,
               std::format("interface {}{} has several providers and none is selected: {}", iface,
                           req, candidate_list(cands)),
-              std::format("re-run interactively, or pass --provider {}={} (or pin it in repro.lua)",
+              std::format("re-run interactively, or pass --provider {}={} (or pin it in repd.lua)",
                           iface, cands.front()->name));
 }
 
-}  // namespace repro
+}  // namespace repd

@@ -6,7 +6,7 @@
 
 #include "platform/proc.hpp"
 
-namespace repro {
+namespace repd {
 namespace {
 
 std::atomic<bool> g_interrupted{false};
@@ -29,4 +29,4 @@ void install_signal_handlers() {
 
 bool interrupted() { return g_interrupted.load(); }
 
-}  // namespace repro
+}  // namespace repd

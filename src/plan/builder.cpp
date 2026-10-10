@@ -8,7 +8,7 @@
 #include "plan/scope.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 namespace {
 
@@ -87,7 +87,7 @@ Error package_without_backend(const std::string& who, const std::string& entry,
                               const std::vector<std::string>& available) {
   const std::string example = available.empty() ? "<backend>" : available.front();
   std::string hint = std::format(
-      "write \"{}:{}\", or set a default in repro.lua: rp.option(\"packages.default_backend\", "
+      "write \"{}:{}\", or set a default in repd.lua: rp.option(\"packages.default_backend\", "
       "\"{}\")",
       example, entry, example);
   if (!available.empty()) hint += std::format(" (installed packages backends: {})", join(available, ", "));
@@ -384,4 +384,4 @@ void add_post_steps(std::vector<Step>& steps) {
   insert_after_last(StepClass::Locale, "locale-gen", true);
 }
 
-}  // namespace repro
+}  // namespace repd

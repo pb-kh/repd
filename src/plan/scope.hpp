@@ -5,7 +5,7 @@
 #include <string>
 #include <string_view>
 
-namespace repro {
+namespace repd {
 
 bool valid_module_name(std::string_view name);
 // Path relative to modules/ ("dev/git.lua", "dev/git/init.lua") -> module name, or "".
@@ -15,4 +15,4 @@ std::string module_slug(std::string_view name);
 // E_UNKNOWN hint text for a missing module, or "".
 std::string suggest_module(std::string_view name, std::span<const std::string> known);
 
-}  // namespace repro
+}  // namespace repd

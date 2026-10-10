@@ -1,10 +1,10 @@
 // Where `env` / `system_env` are written (research R13, revised): one file per
 // module per target, in each consumer's own drop-in directory, so no init
 // system is assumed.
-//   sh            ~/.local/share/repro/env.d/<module>.sh (+ a managed block in the
-//                 login shell's profile that sources them); /etc/profile.d/repro-<module>.sh
-//   fish          ~/.config/fish/conf.d/repro-<module>.fish; /etc/fish/conf.d/repro-<module>.fish
-//   environment.d ~/.config/environment.d/90-repro-<module>.conf; /etc/environment.d/… (systemd)
+//   sh            ~/.local/share/repd/env.d/<module>.sh (+ a managed block in the
+//                 login shell's profile that sources them); /etc/profile.d/repd-<module>.sh
+//   fish          ~/.config/fish/conf.d/repd-<module>.fish; /etc/fish/conf.d/repd-<module>.fish
+//   environment.d ~/.config/environment.d/90-repd-<module>.conf; /etc/environment.d/… (systemd)
 // rp.option("env.targets", "auto" | { ... }); auto = the target user's login
 // shell (+ fish system-wide when fish is installed) + environment.d when
 // systemd is the running init.
@@ -18,7 +18,7 @@
 #include "platform/paths.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 inline constexpr const char* kEnvTargetNames[] = {"sh", "fish", "environment.d"};
 
@@ -42,4 +42,4 @@ std::string env_file_content(const std::string& target, const std::string& modul
 std::vector<std::string> sh_profile_block(const Paths& paths);
 std::string sh_env_dir(const Paths& paths);  // logical
 
-}  // namespace repro
+}  // namespace repd

@@ -1,7 +1,7 @@
 -- with_params fragment merging (research R11).
 local lu = require("luaunit")
-local merge = require("repro.merge")
-local err = require("repro.err")
+local merge = require("repd.merge")
+local err = require("repd.err")
 
 local function expect(code, fn, ...)
   local ok, e = pcall(fn, ...)

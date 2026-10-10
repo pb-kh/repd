@@ -1,4 +1,4 @@
-"""The repro-flatpak add-on (librepro-flatpak.so) against a stub flatpak.
+"""The repd-flatpak add-on (librepd-flatpak.so) against a stub flatpak.
 
 One add-on, two backends: `flatpak` is the system-wide installation (system
 pass) and `flatpak-user` the per-user one (`--user`, user pass).
@@ -7,7 +7,7 @@ pass) and `flatpak-user` the per-user one (`--user`, user pass).
 import os
 import shutil
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 # Each installation's contents are "<application>\t<ref>" lines in $S/system or $S/user.
 FLATPAK = r"""#!/bin/sh
@@ -33,13 +33,13 @@ done
 PROFILE = 'rp.profile { name = "main", default = true, use = { "apps" } }\n'
 
 
-class Flatpak(ReproTestCase):
+class Flatpak(RepdTestCase):
     def setUp(self):
         super().setUp()
-        plugin = os.environ.get("REPRO_FLATPAK_PLUGIN")
+        plugin = os.environ.get("REPD_FLATPAK_PLUGIN")
         if not plugin:
             self.skipTest("built with -Daddons=disabled")
-        shutil.copy(plugin, self.sb.plugin_dir() / "librepro-flatpak.so")
+        shutil.copy(plugin, self.sb.plugin_dir() / "librepd-flatpak.so")
         self.state = self.sb.tmp / "flatpak"
         bin_dir = self.sb.tmp / "bin"
         self.state.mkdir()
@@ -49,7 +49,7 @@ class Flatpak(ReproTestCase):
         stub.chmod(0o755)
         self.sb.env["PATH"] = f"{bin_dir}:{self.sb.env['PATH']}"
         self.sb.env["FLATPAK_STUB"] = str(self.state)
-        self.sb.write("repro.lua", PROFILE)
+        self.sb.write("repd.lua", PROFILE)
 
     def packages(self, *names):
         quoted = ", ".join(f'"{n}"' for n in names)
@@ -100,7 +100,7 @@ class Flatpak(ReproTestCase):
         self.assertNotIn("flatpak install", self.log())
 
     def test_default_backend(self):
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "flatpak-user")\n' + PROFILE)
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "flatpak-user")\n' + PROFILE)
         self.packages("org.mozilla.firefox")
         r = self.sb.run("sync", "-u")
         self.assertOk(r)
@@ -140,13 +140,13 @@ class Flatpak(ReproTestCase):
         self.assertNotIn("Boxes", self.log())
 
     def test_missing_addon_names_the_package(self):
-        (self.sb.plugin_dir() / "librepro-flatpak.so").unlink()
+        (self.sb.plugin_dir() / "librepd-flatpak.so").unlink()
         self.packages("flatpak-user:org.mozilla.firefox")
         r = self.sb.run("sync", "-u")
         self.assertError(r, "E_NO_BACKEND")
         self.assertIn("uses packages backend 'flatpak-user', which is not installed", r.err)
-        self.assertIn("repro-flatpak", r.err)
-        self.assertNotIn("repro-flatpak-user", r.err)
+        self.assertIn("repd-flatpak", r.err)
+        self.assertNotIn("repd-flatpak-user", r.err)
 
 
 if __name__ == "__main__":

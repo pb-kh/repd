@@ -8,10 +8,10 @@
 #include "util/errors.hpp"
 #include "util/value.hpp"
 
-namespace repro {
+namespace repd {
 
 inline constexpr int kFingerprintSchema = 1;
 
 Result<std::string> fingerprint(LuaHost& host, const Value& record);
 
-}  // namespace repro
+}  // namespace repd

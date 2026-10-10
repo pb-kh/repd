@@ -1,4 +1,4 @@
-"""The repro-openrc add-on (librepro-openrc.so) against stub rc-update/rc-service.
+"""The repd-openrc add-on (librepd-openrc.so) against stub rc-update/rc-service.
 
 The stubs keep runlevel membership and started services in files under the
 sandbox, separately for system and --user scope, and log every invocation.
@@ -7,7 +7,7 @@ sandbox, separately for system and --user scope, and log every invocation.
 import os
 import shutil
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 RC_UPDATE = r"""#!/bin/sh
 S="$RC_STUB"; scope=system; all=
@@ -47,18 +47,18 @@ case "$2" in
 esac
 """
 
-REPRO_LUA = """rp.option("services.backend", "openrc")
+REPD_LUA = """rp.option("services.backend", "openrc")
 rp.profile { name = "main", default = true, use = { "svc" } }
 """
 
 
-class OpenRC(ReproTestCase):
+class OpenRC(RepdTestCase):
     def setUp(self):
         super().setUp()
-        plugin = os.environ.get("REPRO_OPENRC_PLUGIN")
+        plugin = os.environ.get("REPD_OPENRC_PLUGIN")
         if not plugin:
             self.skipTest("built with -Daddons=disabled")
-        shutil.copy(plugin, self.sb.plugin_dir() / "librepro-openrc.so")
+        shutil.copy(plugin, self.sb.plugin_dir() / "librepd-openrc.so")
         self.rc = self.sb.tmp / "rc"
         bin_dir = self.sb.tmp / "bin"
         self.rc.mkdir()
@@ -69,7 +69,7 @@ class OpenRC(ReproTestCase):
             p.chmod(0o755)
         self.sb.env["PATH"] = f"{bin_dir}:{self.sb.env['PATH']}"
         self.sb.env["RC_STUB"] = str(self.rc)
-        self.sb.write("repro.lua", REPRO_LUA)
+        self.sb.write("repd.lua", REPD_LUA)
         self.services("system", "sshd", "elogind", "cronie")
         self.services("user", "pipewire")
 
@@ -92,7 +92,7 @@ class OpenRC(ReproTestCase):
         self.module('{ unit = "sshd", state = "enabled" }')
         r = self.sb.run("plugins", "list")
         self.assertOk(r)
-        self.assertRegex(r.out, r"services\s+openrc\s+1\.0\.0\s+1\s+system\s+.*librepro-openrc\.so")
+        self.assertRegex(r.out, r"services\s+openrc\s+1\.0\.0\s+1\s+system\s+.*librepd-openrc\.so")
 
     def test_user_service_enabled_and_started(self):
         self.module('{ unit = "pipewire", scope = "user", state = "enabled", active = true }')
@@ -150,14 +150,14 @@ class OpenRC(ReproTestCase):
         self.assertEqual(self.log(), "")
 
     def test_missing_backend_hint_names_openrc(self):
-        os.remove(self.sb.plugin_dir() / "librepro-openrc.so")
+        os.remove(self.sb.plugin_dir() / "librepd-openrc.so")
         self.sb.sys_path("/run/openrc").mkdir(parents=True)
-        self.sb.write("repro.lua", REPRO_LUA.replace('rp.option("services.backend", "openrc")\n', ""))
+        self.sb.write("repd.lua", REPD_LUA.replace('rp.option("services.backend", "openrc")\n', ""))
         self.module('{ unit = "sshd", state = "enabled" }')
         r = self.sb.run("sync", "-s", "--dry-run", root=True)
         self.assertError(r, "E_NO_BACKEND")
-        self.assertIn("repro-openrc", r.err)
-        self.assertNotIn("repro-systemd", r.err)
+        self.assertIn("repd-openrc", r.err)
+        self.assertNotIn("repd-systemd", r.err)
 
 
 if __name__ == "__main__":

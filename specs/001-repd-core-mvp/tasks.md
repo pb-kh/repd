@@ -1,6 +1,6 @@
-# Tasks: repro — Declarative Environment Configuration Core
+# Tasks: repd — Declarative Environment Configuration Core
 
-**Feature**: `001-repro-core-mvp` | **Date**: 2026-10-09
+**Feature**: `001-repd-core-mvp` | **Date**: 2026-10-09
 **Status**: Implementation phasing M0–M6 | **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md)
 
 **Test Strategy**: Test-first (Constitution IV); suites: `unit` (C++ doctest), `lua` (luaunit), `integration` (Python sandboxed). Tests written before implementation; each user story must pass its independent test scenarios from quickstart.md.
@@ -15,7 +15,7 @@
 
 ### Meson & Build Configuration
 
-- [X] T001 Create root meson.build with C++23, warning_level=3, default_options: `['force_fallback_for=luajit,sqlite3', 'cpp_std=c++23']`, subprojects, and main `repro` executable target in src/
+- [X] T001 Create root meson.build with C++23, warning_level=3, default_options: `['force_fallback_for=luajit,sqlite3', 'cpp_std=c++23']`, subprojects, and main `repd` executable target in src/
 - [X] T002 [P] Create meson.options with `test_hooks` (bool, default false), `addons` (feature) options
 - [X] T003 [P] Create .clang-format configuration with Google style base, column limit 100
 - [X] T004 Create subprojects/luajit.wrap with exact commit pin and source_hash (research R2)
@@ -34,7 +34,7 @@
 ### Platform Abstraction Layer
 
 - [X] T013 [P] Implement src/platform/fs.hpp with Fs interface (stat, read, atomic write via tmp+fsync+rename, symlink, mkdir -p, chmod, chown)
-- [X] T014 [P] Implement src/platform/fs.cpp for Linux (real FS + REPRO_SYSROOT hook for tests, research R20)
+- [X] T014 [P] Implement src/platform/fs.cpp for Linux (real FS + REPD_SYSROOT hook for tests, research R20)
 - [X] T015 [P] Implement src/platform/proc.hpp and src/platform/proc.cpp with Proc (spawn argv, no shell except in actions)
 - [X] T016 [P] Implement src/platform/users.hpp and src/platform/users.cpp with Users (getpwnam, groups, SUDO_USER resolution per research R12)
 - [X] T017 [P] Implement src/platform/paths.hpp and src/platform/paths.cpp with Paths (XDG, sysroot hook, config dir resolution per research R12)
@@ -42,16 +42,16 @@
 
 ### Lua Bootstrap & Embedding
 
-- [X] T019 Create src/lua/repro/init.lua entry point that registers the `rp` global facade (phase detection, recording-only eval, sandbox setup)
-- [X] T020 [P] Create src/lua/repro/canon.lua (research R8) with `canon.encode(v)` (byte-stable serialization: sorted keys, int/float normalization, %q strings, function rejection, cycle detection) and `canon.pretty(v)` (indented version)
-- [X] T021 [P] Create src/lua/repro/sandbox.lua with fresh environment tables per module (research R9): include rp, string, table, math (no random), select, pairs, ipairs, next, type, tostring, tonumber, error, assert, unpack, setmetatable, getmetatable; exclude io, os, require, debug, ffi, jit, package
-- [X] T022 Create src/lua/repro/params.lua with parameter resolution (type validation, one_of constraints, defaults)
-- [X] T023 Create src/lua/repro/resolve.lua with provider resolution state machine (cli → profile → pin → lock → only-option → prompt → E_AMBIGUOUS, research R16) — *deviation: provider resolution is implemented once, in C++ (src/plan/resolver.cpp, T065), not duplicated in Lua*
-- [X] T024 Create src/lua/repro/merge.lua with `with_params` fragment merging (list concat + dedup, map merge, conflict error, research R11)
-- [X] T025 Create src/lua/repro/lock.lua with `repro.lock.lua` file I/O (Lua table serialize/deserialize)
-- [X] T026 [P] Create src/lua/repro/backend.lua facade with namespace dispatch (packages, services), call routing to native/.so or repo-local Lua backends — *Lua facade routes to the C++ BackendRegistry, which wraps native and Lua backends alike*
-- [X] T027 Create src/lua/repro/builders.lua with module/interface/param/profile builder functions (`rp.module`, `rp.interface`, `rp.profile`, `rp.param_*)
-- [X] T028 Implement src/eval/embedded.cpp with C++ `#embed` of all src/lua/repro/*.lua files into static table keyed by module name, registered in custom `package.searchers` entry
+- [X] T019 Create src/lua/repd/init.lua entry point that registers the `rp` global facade (phase detection, recording-only eval, sandbox setup)
+- [X] T020 [P] Create src/lua/repd/canon.lua (research R8) with `canon.encode(v)` (byte-stable serialization: sorted keys, int/float normalization, %q strings, function rejection, cycle detection) and `canon.pretty(v)` (indented version)
+- [X] T021 [P] Create src/lua/repd/sandbox.lua with fresh environment tables per module (research R9): include rp, string, table, math (no random), select, pairs, ipairs, next, type, tostring, tonumber, error, assert, unpack, setmetatable, getmetatable; exclude io, os, require, debug, ffi, jit, package
+- [X] T022 Create src/lua/repd/params.lua with parameter resolution (type validation, one_of constraints, defaults)
+- [X] T023 Create src/lua/repd/resolve.lua with provider resolution state machine (cli → profile → pin → lock → only-option → prompt → E_AMBIGUOUS, research R16) — *deviation: provider resolution is implemented once, in C++ (src/plan/resolver.cpp, T065), not duplicated in Lua*
+- [X] T024 Create src/lua/repd/merge.lua with `with_params` fragment merging (list concat + dedup, map merge, conflict error, research R11)
+- [X] T025 Create src/lua/repd/lock.lua with `repd.lock.lua` file I/O (Lua table serialize/deserialize)
+- [X] T026 [P] Create src/lua/repd/backend.lua facade with namespace dispatch (packages, services), call routing to native/.so or repo-local Lua backends — *Lua facade routes to the C++ BackendRegistry, which wraps native and Lua backends alike*
+- [X] T027 Create src/lua/repd/builders.lua with module/interface/param/profile builder functions (`rp.module`, `rp.interface`, `rp.profile`, `rp.param_*)
+- [X] T028 Implement src/eval/embedded.cpp with C++ `#embed` of all src/lua/repd/*.lua files into static table keyed by module name, registered in custom `package.searchers` entry
 - [X] T029 [P] Create tests/lua/test_canon.lua with luaunit tests for byte-stable encoding (sorted keys, int/float, cycles, functions)
 - [X] T030 [P] Create tests/lua/test_sandbox.lua with luaunit tests for eval sandbox restrictions (os/io/require/debug/ffi forbidden, read-only queries allowed)
 - [X] T031 [P] Create tests/lua/test_params.lua with luaunit tests for parameter resolution and validation
@@ -60,7 +60,7 @@
 
 - [X] T032 Implement src/main.cpp with minimal CLI11 setup (subcommands: init, sync, status, journal, list, show, plugins; --help, --version)
 - [X] T033 Create src/cli/commands.hpp and src/cli/commands.cpp skeleton with command registration
-- [X] T034 Implement `repro --version` command returning `REPRO_VERSION` and `REPRO_API_VERSION`
+- [X] T034 Implement `repd --version` command returning `REPD_VERSION` and `REPD_API_VERSION`
 
 **Checkpoint**: Phase 1 complete. Build succeeds with `meson test --suite unit` and `meson test --suite lua` passing. All C++ and Lua modules are in place. Platform layer is testable.
 
@@ -74,14 +74,14 @@
 
 ### C++ Data Model & Declaration Tree
 
-- [X] T035 [P] Create include/repro/config.hpp and src/state/config.cpp with ConfigRepository struct (root, entry, lock, modules_dir, files_dir, lua_plugins_dir paths per research R12)
+- [X] T035 [P] Create include/repd/config.hpp and src/state/config.cpp with ConfigRepository struct (root, entry, lock, modules_dir, files_dir, lua_plugins_dir paths per research R12)
 - [X] T036 [P] Create src/eval/declaration.hpp with Lua-evaluated data model structs: Module, Interface, Profile, Param, FileEntry, ServiceEntry, UserEntry, LocaleEntry, UdevEntry, Action, Backend (matching data-model.md §1) — *also src/eval/declaration.cpp (Value → struct conversion)*
 - [X] T037 [P] Create src/plan/scope.hpp with ModuleName normalization (`^[a-z0-9_+-]+(/[a-z0-9_+-]+)*$`) and validation helpers
 
 ### SQLite State Management (R5)
 
 - [X] T038 Create src/state/migrations.cpp with numbered SQL schema migrations applied in transaction (meta, runs, run_providers, run_modules, steps, module_state, managed_files, managed_packages per data-model.md §3.1)
-- [X] T039 [P] Create src/state/db.hpp and src/state/db.cpp with SQLite wrapper: open per-mode (user `~/.local/state/repro/repro.db`, system `/var/lib/repro/repro.db` 0600), WAL mode, `synchronous=NORMAL`, `SQLITE_DEFAULT_FOREIGN_KEYS=1`, migrate on open
+- [X] T039 [P] Create src/state/db.hpp and src/state/db.cpp with SQLite wrapper: open per-mode (user `~/.local/state/repd/repd.db`, system `/var/lib/repd/repd.db` 0600), WAL mode, `synchronous=NORMAL`, `SQLITE_DEFAULT_FOREIGN_KEYS=1`, migrate on open
 - [X] T040 [P] Create src/state/ledger.hpp and src/state/ledger.cpp with repository interfaces: InsertRun, AppendStep, UpdateModuleState, QueryManagedFile, InsertManaged{Files,Packages}
 - [X] T041 Create src/state/run_lock.hpp and src/state/run_lock.cpp with `run.lock` exclusive lock guard (`flock(LOCK_EX|LOCK_NB)` beside state dir, error message includes pid, research R6)
 - [X] T042 Create tests/unit/test_state.cpp with doctest for DB creation, migration, ledger inserts/queries, lock guard behavior
@@ -98,7 +98,7 @@
 
 - [X] T048 [P] Create src/plan/plan.hpp with Plan struct: mode, profile, requested, selected, providers, backends, steps (ordered list, per data-model.md §2)
 - [X] T049 [P] Create src/plan/step.hpp with Step struct: id (deterministic `<module>/<class>/<key>`), module, class (enum: packages, files, env, services, users, locale, udev, action), privilege, description, desired, check_result, diff_summary, imperative
-- [X] T050 [P] Create src/plan/fingerprint.hpp and src/plan/fingerprint.cpp implementing decision hash per research R10: SHA-256 of canon-encoded map including schema version, repro version, API version, mode, module, source sha256, resolved declaration, params, providers, backends
+- [X] T050 [P] Create src/plan/fingerprint.hpp and src/plan/fingerprint.cpp implementing decision hash per research R10: SHA-256 of canon-encoded map including schema version, repd version, API version, mode, module, source sha256, resolved declaration, params, providers, backends
 - [X] T051 [P] Create src/plan/graph.hpp and src/plan/graph.cpp with scope selection (research R10): closure over requires, interface→provider resolution, cycle detection (DFS), topological sort with lexicographic tie-break
 - [X] T052 Create tests/unit/test_plan.cpp with doctest for fingerprinting (RC-003 byte-stability), graph cycles, topo ordering
 
@@ -111,7 +111,7 @@
 ### Integration Test Framework
 
 - [X] T056 Create tests/integration/ directory structure and meson.build Python test runner (subprocess, Python stdlib unittest)
-- [X] T057 Create tests/integration/conftest.py with sandboxed temp-dir fixture: HOME, XDG_*, REPRO_SYSROOT, REPRO_TEST_ASSUME_ROOT setup; cleanup
+- [X] T057 Create tests/integration/conftest.py with sandboxed temp-dir fixture: HOME, XDG_*, REPD_SYSROOT, REPD_TEST_ASSUME_ROOT setup; cleanup
 - [X] T058 [P] Create tests/integration/stubs/{locale-gen,udevadm,useradd,usermod} bash logging stubs for system pass testing
 - [X] T059 Create tests/fixtures/repos/basic/ config repo (one module, files+env, empty requires)
 - [X] T060 [P] Create tests/fixtures/plugins/fake-packages.lua pure-Lua backend for testing (probe, installed, install stubs)
@@ -138,7 +138,7 @@
 
 #### Discovery & Evaluation
 
-- [X] T062 [US1] Implement src/eval/discovery.cpp finish: load repro.lua, extract options, profiles, providers from RootConfig (research R11)
+- [X] T062 [US1] Implement src/eval/discovery.cpp finish: load repd.lua, extract options, profiles, providers from RootConfig (research R11)
 - [X] T063 [US1] Implement src/eval/evaluate.cpp finish: eval all modules in sandbox, apply `with_params` per-profile, build resolved declaration tree
 - [X] T064 [US1] Create tests/lua/test_merge.lua with luaunit for `with_params` fragment merging (list concat, map merge, conflict error)
 
@@ -153,17 +153,17 @@
 
 - [X] T069 [US1] Implement src/apply/checks.hpp and src/apply/checks.cpp: for files, hash stored vs on-disk (adoption guard); for env, check if file exists
 - [X] T070 [US1] Implement src/apply/files.cpp step executor: link/copy/create with mode/chown, atomic write (tmp+fsync+rename per research R20), populate managed_files ledger entry
-- [X] T071 [US1] Implement src/apply/env.cpp step executor: write `90-repro-<slug>.conf` per module (research R13), check no duplicate env vars across modules, atomically — *env/udev executors share src/apply/files.cpp; per-module env files + conflict check in src/plan/builder.cpp*
+- [X] T071 [US1] Implement src/apply/env.cpp step executor: write `90-repd-<slug>.conf` per module (research R13), check no duplicate env vars across modules, atomically — *env/udev executors share src/apply/files.cpp; per-module env files + conflict check in src/plan/builder.cpp*
 - [X] T072 [US1] Implement src/apply/engine.cpp: execute steps in Plan order, re-check before mutate (TOCTOU), commit ledger per step, stop at first failure
-- [X] T073 [US1] Implement adoption guard in src/apply/adoption.cpp: detect unmanaged existing file, refuse with E_BLOCKED + `--adopt` hint, keep backups (`<dest>.repro-adopted-<timestamp>`), journal adoption (research R14)
+- [X] T073 [US1] Implement adoption guard in src/apply/adoption.cpp: detect unmanaged existing file, refuse with E_BLOCKED + `--adopt` hint, keep backups (`<dest>.repd-adopted-<timestamp>`), journal adoption (research R14)
 - [X] T074 [US1] Create tests/unit/test_apply.cpp with doctest for step execution, adoption guard, env dedup, link vs copy
 
 #### CLI Commands
 
-- [X] T075 [US1] Implement `repro init`: scaffold `~/.config/repro/` (repro.lua stub, modules/, files/, plugins/lua/) with starter modules (e.g., "base" for system.env + users)
-- [X] T076 [US1] Implement `repro sync [-u | -s] [--dry-run] [--yes] [--adopt] [--refresh MODULE] [modules...]`: resolve scope, plan, preview or apply per research R15; exit 0 (ok), 1 (apply failed), 2 (config error, E_BLOCKED)
-- [X] T077 [US1] Implement `repro status [mode]`: per-module status (applied, stale, pending, failed) from module_state table per mode (research R10)
-- [X] T078 [US1] Implement `repro journal [--mode MODE] [--module MODULE]`: readable output of run/step history from DB; timestamps, results, error reasons, adopted files (research FR-012)
+- [X] T075 [US1] Implement `repd init`: scaffold `~/.config/repd/` (repd.lua stub, modules/, files/, plugins/lua/) with starter modules (e.g., "base" for system.env + users)
+- [X] T076 [US1] Implement `repd sync [-u | -s] [--dry-run] [--yes] [--adopt] [--refresh MODULE] [modules...]`: resolve scope, plan, preview or apply per research R15; exit 0 (ok), 1 (apply failed), 2 (config error, E_BLOCKED)
+- [X] T077 [US1] Implement `repd status [mode]`: per-module status (applied, stale, pending, failed) from module_state table per mode (research R10)
+- [X] T078 [US1] Implement `repd journal [--mode MODE] [--module MODULE]`: readable output of run/step history from DB; timestamps, results, error reasons, adopted files (research FR-012)
 
 #### Fingerprint & Idempotency
 
@@ -189,7 +189,7 @@
 
 ## Phase 4: User Story 2 — Compose: Dependencies and Interchangeable Providers (M2, Priority: P2)
 
-**Goal**: Modules declare requirements that are resolved in dependency order. Interfaces can have multiple providers; the user is prompted once, and the choice is recorded in `repro.lock.lua` so future runs never ask again.
+**Goal**: Modules declare requirements that are resolved in dependency order. Interfaces can have multiple providers; the user is prompted once, and the choice is recorded in `repd.lock.lua` so future runs never ask again.
 
 **Independent Test**: Fixture with requirer A, interface I, providers P1 (priority 10) and P2 (20). Run in sandbox: first apply prompts once (default P1), choice recorded in lock; re-apply performs no prompt, same provider; explicit override via `--provider` changes selection and lock source.
 
@@ -211,7 +211,7 @@
 #### Provider Prompt & Lock File
 
 - [X] T090 [US2] Implement src/cli/prompt.cpp: TTY detection (`/dev/tty`, isatty checks), list providers with priority-based default highlight, interactive selection via stdin
-- [X] T091 [US2] Implement src/plan/lock.hpp and src/plan/lock.cpp: read/write `repro.lock.lua` (Lua file format per data-model.md §3.2), merge prompt-selected decisions into lock with `decided_at` timestamp, handle `--reselect` flag (research R16)
+- [X] T091 [US2] Implement src/plan/lock.hpp and src/plan/lock.cpp: read/write `repd.lock.lua` (Lua file format per data-model.md §3.2), merge prompt-selected decisions into lock with `decided_at` timestamp, handle `--reselect` flag (research R16)
 - [X] T092 [US2] Create tests/lua/test_lock.lua with luaunit for lock file I/O (parse, serialize, merge)
 
 #### CLI Flags
@@ -222,8 +222,8 @@
 
 #### New CLI Commands
 
-- [X] T096 [US2] Implement `repro list providers [--module MODULE]`: show all available providers, their names, descriptions, origins (repo pin, per-profile, etc.)
-- [X] T097 [US2] Implement `repro show MODULE`: resolved declaration of MODULE (parameters, providers, content sections) in canonical format (research R8)
+- [X] T096 [US2] Implement `repd list providers [--module MODULE]`: show all available providers, their names, descriptions, origins (repo pin, per-profile, etc.)
+- [X] T097 [US2] Implement `repd show MODULE`: resolved declaration of MODULE (parameters, providers, content sections) in canonical format (research R8)
 
 #### Integration Tests
 
@@ -242,12 +242,12 @@
 
 **Goal**: Privileged steps (packages, system files, services, users, locale, udev) are separated from user steps. A `--system` / `-s` flag applies only system work; unprivileged runs report pending system changes. Each mode has its own DB and execution records.
 
-**Independent Test**: Repo with both user and system steps. User pass unprivileged (user applied, system reported pending). System pass elevated via `REPRO_TEST_ASSUME_ROOT=1` (system applied, user untouched). Re-run each independently (both skip).
+**Independent Test**: Repo with both user and system steps. User pass unprivileged (user applied, system reported pending). System pass elevated via `REPD_TEST_ASSUME_ROOT=1` (system applied, user untouched). Re-run each independently (both skip).
 
 **Acceptance from spec.md**:
 1. User pass → only user steps applied, system count reported pending with elevated-pass hint.
 2. System pass → only system steps applied, user files untouched.
-3. System pass without privileges → E_PRIVILEGE error + hint for `sudo repro sync -s`.
+3. System pass without privileges → E_PRIVILEGE error + hint for `sudo repd sync -s`.
 4. Both passes complete → each independently skips on re-run.
 5. System-only module → applied in system pass, recorded separately.
 
@@ -260,20 +260,20 @@
 
 #### Separate State Stores
 
-- [X] T106 [US3] Enhance src/state/db.cpp to open per-mode: user `~/.local/state/repro/repro.db`, system `/var/lib/repro/repro.db` (0700 dir, 0600 file, root-owned per research R5)
+- [X] T106 [US3] Enhance src/state/db.cpp to open per-mode: user `~/.local/state/repd/repd.db`, system `/var/lib/repd/repd.db` (0700 dir, 0600 file, root-owned per research R5)
 - [X] T107 [US3] Implement separate run.lock per state dir (research R6)
 - [X] T108 [US3] Enhance module_state queries to be mode-specific
 
 #### Privilege Checks & Hints
 
 - [X] T109 [US3] Implement src/platform/users.cpp SUDO_USER detection: under `sudo`, use `getpwnam($SUDO_USER)` for home/config resolution (research R12)
-- [X] T110 [US3] Implement privilege check in apply phase: if mode=system and euid != 0 (unless REPRO_TEST_ASSUME_ROOT=1), error E_PRIVILEGE with hint `sudo repro sync -s` (research R12)
+- [X] T110 [US3] Implement privilege check in apply phase: if mode=system and euid != 0 (unless REPD_TEST_ASSUME_ROOT=1), error E_PRIVILEGE with hint `sudo repd sync -s` (research R12)
 - [X] T111 [US3] Implement "pending other-mode" reporting: in preview/status, count system steps pending when in user mode and vice versa, add hint (research US3-AS1)
 
 #### System Step Executors
 
 - [X] T112 [US3] Implement src/apply/users.cpp: useradd/usermod via Proc.spawn, getent validation, additive-groups-only policy (research data-model.md UserEntry)
-- [X] T113 [US3] Implement src/apply/locale.cpp: managed block (# BEGIN repro / # END repro) in `/etc/locale.gen`, `locale-gen` post-step, `/etc/locale.conf` LANG= if default declared (research R13, data-model.md LocaleEntry)
+- [X] T113 [US3] Implement src/apply/locale.cpp: managed block (# BEGIN repd / # END repd) in `/etc/locale.gen`, `locale-gen` post-step, `/etc/locale.conf` LANG= if default declared (research R13, data-model.md LocaleEntry)
 - [X] T114 [US3] Implement src/apply/udev.cpp: write per-rule files to `/etc/udev/rules.d/`, single `udevadm control --reload` post-step if any udev changed (research R13) — *udev rule files use the files executor; reload post-step in src/apply/locale.cpp (apply_post)*
 - [X] T115 [US3] Enhance src/apply/files.cpp to handle system scope (absolute paths, root-owned if needed)
 
@@ -281,8 +281,8 @@
 
 - [X] T116 [US3] Add `-s` / `--system` flag to `sync`, `status`, `journal` commands (mode selection)
 - [X] T117 [US3] Default mode (no flag) = user mode
-- [X] T118 [US3] Update `repro status` to default user mode; show pending other-mode count
-- [X] T119 [US3] Update `repro journal` to filter by mode
+- [X] T118 [US3] Update `repd status` to default user mode; show pending other-mode count
+- [X] T119 [US3] Update `repd journal` to filter by mode
 
 #### Integration Tests
 
@@ -324,7 +324,7 @@
 
 #### New CLI Commands
 
-- [X] T130 [US4] Implement `repro list profiles`: show all profiles, highlight default, show description
+- [X] T130 [US4] Implement `repd list profiles`: show all profiles, highlight default, show description
 - [X] T131 [US4] Implement `--profile PROFILE` flag for `sync` command
 
 #### Integration Tests
@@ -341,11 +341,11 @@
 
 **Goal**: Pluggable backend add-ons (packages, services) loaded from system paths or repo-local Lua. Core works with zero add-ons (files/env only). Missing backend → actionable error. User can list all loaded extensions.
 
-**Independent Test**: Sandboxed fixture with stub/fake backends (pure Lua + repo-local). Base operation without backends (files/env succeeds). Package step without backend → E_NO_BACKEND naming repro-pacman. Installed fake backend auto-selects, listed in plugins list.
+**Independent Test**: Sandboxed fixture with stub/fake backends (pure Lua + repo-local). Base operation without backends (files/env succeeds). Package step without backend → E_NO_BACKEND naming repd-pacman. Installed fake backend auto-selects, listed in plugins list.
 
 **Acceptance from spec.md**:
 1. Filesystem/environment only, zero backends → succeeds.
-2. Required backend missing → E_NO_BACKEND + hint (install repro-pacman).
+2. Required backend missing → E_NO_BACKEND + hint (install repd-pacman).
 3. Eligible backend installed, not configured → auto-selects (research R17), stated in preview.
 4. Repo-local lightweight extension → enabled, visibly reduced-trust (research R17).
 5. List extensions: kind, name, origin, version, incompatible versions rejected with both versions.
@@ -355,12 +355,12 @@
 
 #### Plugin System & ABI
 
-- [X] T135 Create include/repro/plugin.h: C ABI header, `REPRO_PLUGIN_ABI = 1`, entry `repro_plugin_init(abi, host, host_api, registrar, registrar_api)`, data is NUL-terminated UTF-8 strings only (research R17)
-- [X] T136 [P] Create src/plugins/loader.hpp and src/plugins/loader.cpp: dlopen with `RTLD_NOW|RTLD_LOCAL`, search path (system `/usr/lib/repro/plugins`, `/usr/lib64/repro/plugins`, user `~/.local/lib/repro/plugins`, repo-local `<config>/plugins/lua/*.lua` per research R17), ABI version check, fail-soft per plugin
+- [X] T135 Create include/repd/plugin.h: C ABI header, `REPD_PLUGIN_ABI = 1`, entry `repd_plugin_init(abi, host, host_api, registrar, registrar_api)`, data is NUL-terminated UTF-8 strings only (research R17)
+- [X] T136 [P] Create src/plugins/loader.hpp and src/plugins/loader.cpp: dlopen with `RTLD_NOW|RTLD_LOCAL`, search path (system `/usr/lib/repd/plugins`, `/usr/lib64/repd/plugins`, user `~/.local/lib/repd/plugins`, repo-local `<config>/plugins/lua/*.lua` per research R17), ABI version check, fail-soft per plugin
 
 #### Backend Facades
 
-- [X] T137 [US5] Enhance src/lua/repro/backend.lua: dispatch packages/services namespaces to native .so or repo-local Lua backends, call routing (probing, installed, install, state, etc.)
+- [X] T137 [US5] Enhance src/lua/repd/backend.lua: dispatch packages/services namespaces to native .so or repo-local Lua backends, call routing (probing, installed, install, state, etc.)
 - [X] T138 [US5] Implement step executors for packages and services calling backend ops via facade
 
 #### Backend Abstraction for Steps
@@ -376,14 +376,14 @@
 
 #### New CLI Commands
 
-- [X] T144 [US5] Implement `repro plugins list`: show all loaded extensions: kind (packages/services), name, origin (system/user/repo), version, abi status (compatible/incompatible with both versions)
+- [X] T144 [US5] Implement `repd plugins list`: show all loaded extensions: kind (packages/services), name, origin (system/user/repo), version, abi status (compatible/incompatible with both versions)
 
 #### Pacman & Systemd Add-Ons
 
 - [X] T145 Create addons/pacman/src/main.cpp with pacman backend plugin: namespace=packages, probe (pacman -V), installed (pacman -Qq), install (pacman -S), remove (pacman -R)
-- [X] T146 Create addons/pacman/meson.build shared_module target, installed to libdir/repro/plugins/pacman.so
+- [X] T146 Create addons/pacman/meson.build shared_module target, installed to libdir/repd/plugins/pacman.so
 - [X] T147 Create addons/systemd/src/main.cpp with systemd backend plugin: namespace=services, probe (systemctl --version), state (systemctl is-enabled/is-active), enable/disable/start/stop
-- [X] T148 Create addons/systemd/meson.build shared_module target, installed to libdir/repro/plugins/systemd.so
+- [X] T148 Create addons/systemd/meson.build shared_module target, installed to libdir/repd/plugins/systemd.so
 
 #### Declarative Contract Enforcement
 
@@ -392,7 +392,7 @@
 #### Integration Tests
 
 - [X] T150 [US5] Create tests/integration/test_us5_no_backends.py: files-only repo, zero plugins installed, succeeds
-- [X] T151 [US5] Create tests/integration/test_us5_missing_backend.py: packages required, no pacman backend, E_NO_BACKEND exit 2 names repro-pacman
+- [X] T151 [US5] Create tests/integration/test_us5_missing_backend.py: packages required, no pacman backend, E_NO_BACKEND exit 2 names repd-pacman
 - [X] T152 [US5] Create tests/integration/test_us5_backends.py: with fake backends, package steps execute, listed in `plugins list`
 - [X] T153 [US5] Create tests/integration/test_us5_repo_local.py: repo-local `plugins/lua/fake-*.lua` backend, enabled and flagged reduced-trust
 
@@ -411,7 +411,7 @@
 - [X] T154 [P] Write docs/lua-api.md: normative user documentation of `rp.*` API surface (all functions, parameters, return values, error guarantees); kept in sync by test (research R18)
 - [X] T155 Create tests/lua/test_api_docs.lua: iterate bootstrap's `rp` API registry, assert each symbol in docs/lua-api.md (research R18)
 - [X] T156 [P] Complete contracts/cli.md: all exit codes (0, 1, 2, 130), error messages, plan/status output format, journal format — *contracts updated with implemented details (status line, plan-error, post-steps, extra codes)*
-- [X] T157 [P] Complete contracts/lockfile.md: `repro.lock.lua` full format specification per data-model.md §3.2
+- [X] T157 [P] Complete contracts/lockfile.md: `repd.lock.lua` full format specification per data-model.md §3.2
 - [X] T158 [P] Complete contracts/plugin-abi.md: full C ABI spec, dlopen contract, return value conventions
 
 ### Performance & Determinism
@@ -439,7 +439,7 @@
 
 ### Adoption & Distribution
 
-- [X] T170 Ensure repro-pacman and repro-systemd add-ons build independently via `meson install`
+- [X] T170 Ensure repd-pacman and repd-systemd add-ons build independently via `meson install`
 - [X] T171 Create install packages/instructions for Arch (PKGBUILD or ArchWiki pattern) — *packaging/arch/PKGBUILD (split package; not built with makepkg here)*
 
 ### Final Validation

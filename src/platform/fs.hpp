@@ -13,7 +13,7 @@
 
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 enum class FileType { None, File, Dir, Symlink, Other };
 
@@ -67,4 +67,4 @@ class RealFs final : public Fs {
   Status remove(const std::string& path) override;
 };
 
-}  // namespace repro
+}  // namespace repd

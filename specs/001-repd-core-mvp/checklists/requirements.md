@@ -1,4 +1,4 @@
-# Specification Quality Checklist: repro — Declarative Environment Configuration Core
+# Specification Quality Checklist: repd — Declarative Environment Configuration Core
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
 **Created**: 2026-10-09

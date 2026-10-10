@@ -1,4 +1,4 @@
-# Quickstart: build, test, and validate repro core MVP
+# Quickstart: build, test, and validate repd core MVP
 
 Validates the feature end-to-end against the spec's user stories. Everything
 here runs **sandboxed** — never against the live system (Constitution IV).
@@ -16,7 +16,7 @@ meson setup build --wrap-mode=nodownload -Dtest_hooks=true -Dwerror=true
 meson compile -C build
 meson test -C build                      # all suites
 meson test -C build --suite unit         # C++ doctest
-meson test -C build --suite lua          # repro-lua-test + luaunit
+meson test -C build --suite lua          # repd-lua-test + luaunit
 meson test -C build --suite integration  # sandboxed end-to-end
 ```
 
@@ -33,19 +33,19 @@ Formatting gate: `ninja -C build clang-format-check`.
 ```sh
 export SANDBOX=$(mktemp -d)
 export HOME=$SANDBOX/home XDG_CONFIG_HOME=$SANDBOX/home/.config XDG_STATE_HOME=$SANDBOX/home/.local/state
-export REPRO_SYSROOT=$SANDBOX/root            # test_hooks builds only
+export REPD_SYSROOT=$SANDBOX/root            # test_hooks builds only
 export PATH=$PWD/tests/integration/stubs:$PATH # logging stubs for locale-gen/udevadm/useradd
-mkdir -p $HOME $REPRO_SYSROOT
-R=$PWD/build/repro
+mkdir -p $HOME $REPD_SYSROOT
+R=$PWD/build/repd
 ```
 
 ### US1 — declare once, apply safely
 
 ```sh
-$R init                                  # scaffold ~/.config/repro
-cp tests/fixtures/plugins/fake-packages.lua ~/.config/repro/plugins/lua/
+$R init                                  # scaffold ~/.config/repd
+cp tests/fixtures/plugins/fake-packages.lua ~/.config/repd/plugins/lua/
 $R sync -u --dry-run                     # plan shown; nothing changed
-find $HOME -newer ~/.config/repro/repro.lua -not -path '*/repro/*'   # → empty
+find $HOME -newer ~/.config/repd/repd.lua -not -path '*/repd/*'   # → empty
 $R sync -u                               # applies; summary lists every change
 $R sync -u                               # "up to date", 0 changes, < 2 s
 echo drift >> ~/.config/example.conf; $R sync -u   # "~ files … restore drift"
@@ -69,9 +69,9 @@ $R --config … sync -u dev/c++ --provider dev/ide=dev/ide/emacs   # override; l
 
 ```sh
 $R --config tests/fixtures/repos/mixed sync -u    # user steps applied; "N pending for system pass"
-$R --config … sync -s; echo $?                    # 2, E_PRIVILEGE (hint: sudo repro sync -s)
-REPRO_TEST_ASSUME_ROOT=1 $R --config … sync -s    # system steps → $REPRO_SYSROOT/etc/…, state in $REPRO_SYSROOT/var/lib/repro
-$R … sync -u; REPRO_TEST_ASSUME_ROOT=1 $R … sync -s   # both "up to date"
+$R --config … sync -s; echo $?                    # 2, E_PRIVILEGE (hint: sudo repd sync -s)
+REPD_TEST_ASSUME_ROOT=1 $R --config … sync -s    # system steps → $REPD_SYSROOT/etc/…, state in $REPD_SYSROOT/var/lib/repd
+$R … sync -u; REPD_TEST_ASSUME_ROOT=1 $R … sync -s   # both "up to date"
 ```
 
 ### US4 — profiles
@@ -85,7 +85,7 @@ $R --config … sync -u --profile server --dry-run   # only server modules
 
 ```sh
 $R --config tests/fixtures/repos/files-only sync -u   # works with zero plugins
-$R --config tests/fixtures/repos/needs-pkgs sync -u --dry-run; echo $?   # 2, E_NO_BACKEND names repro-pacman
+$R --config tests/fixtures/repos/needs-pkgs sync -u --dry-run; echo $?   # 2, E_NO_BACKEND names repd-pacman
 cp -r tests/fixtures/repos/needs-pkgs $SANDBOX/np && cp tests/fixtures/plugins/fake-*.lua $SANDBOX/np/plugins/lua/
 $R --config $SANDBOX/np plugins list   # repo-local fakes flagged reduced trust
 ```

@@ -2,10 +2,10 @@
 
 import time
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class DeclareApply(ReproTestCase):
+class DeclareApply(RepdTestCase):
     fixture = "basic"
 
     def test_init_scaffolds_and_applies(self):
@@ -14,7 +14,7 @@ class DeclareApply(ReproTestCase):
         self.sb = Sandbox(None)
         r = self.sb.run("init")
         self.assertOk(r)
-        for rel in ("repro.lua", "modules/base/init.lua", "modules/base/files/example.conf", ".gitignore", "plugins/lua"):
+        for rel in ("repd.lua", "modules/base/init.lua", "modules/base/files/example.conf", ".gitignore", "plugins/lua"):
             self.assertTrue((self.sb.config / rel).exists(), rel)
         self.assertError(self.sb.run("init"), "E_CONFIG")  # refuses to overwrite
         self.assertOk(self.sb.run("init", "--force"))
@@ -26,9 +26,9 @@ class DeclareApply(ReproTestCase):
         before = self.sb.snapshot(self.sb.tmp)
         r = self.sb.run("sync", "-u", "--dry-run")
         self.assertOk(r)
-        self.assertIn("repro plan — mode: user — profile: main", r.out)
+        self.assertIn("repd plan — mode: user — profile: main", r.out)
         self.assertIn("+ files   ~/.config/app/config.toml  copy from modules/base/files/config.toml", r.out)
-        self.assertIn("+ env     EDITOR=vi  (~/.local/share/repro/env.d/base.sh)", r.out)
+        self.assertIn("+ env     EDITOR=vi  (~/.local/share/repd/env.d/base.sh)", r.out)
         self.assertIn("+ packages fake: install ripgrep", r.out)
         self.assertIn("packages = fake lua:", r.out)
         self.assertIn("reduced trust", r.out)
@@ -40,14 +40,14 @@ class DeclareApply(ReproTestCase):
         self.assertOk(r)
         for line in ("ok    base/packages/fake",
                      "ok    base/files/~/.config/app/config.toml",
-                     "ok    base/env/~/.local/share/repro/env.d/base.sh",
+                     "ok    base/env/~/.local/share/repd/env.d/base.sh",
                      "ok    base/env/~/.profile",
                      "done: 4 applied"):
             self.assertIn(line, r.out)
         self.assertEqual(self.sb.home_path(".config/app/config.toml").read_text(), 'theme = "dark"\n')
-        env = self.sb.home_path(".local/share/repro/env.d/base.sh").read_text()
+        env = self.sb.home_path(".local/share/repd/env.d/base.sh").read_text()
         self.assertIn("export EDITOR='vi'\n", env)
-        self.assertIn("# BEGIN repro\n", self.sb.home_path(".profile").read_text())
+        self.assertIn("# BEGIN repd\n", self.sb.home_path(".profile").read_text())
 
         start = time.monotonic()
         r = self.sb.run("sync", "-u")

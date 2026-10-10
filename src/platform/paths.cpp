@@ -6,7 +6,7 @@
 
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 std::string_view to_string(Mode m) { return m == Mode::User ? "user" : "system"; }
 Mode other(Mode m) { return m == Mode::User ? Mode::System : Mode::User; }
@@ -23,7 +23,7 @@ std::string absolute(std::string_view p) {
 }  // namespace
 
 bool Paths::test_hooks() const {
-#if REPRO_TEST_HOOKS
+#if REPD_TEST_HOOKS
   return true;
 #else
   return false;
@@ -33,9 +33,9 @@ bool Paths::test_hooks() const {
 Result<Paths> Paths::detect(const Env& env, const PathsOptions& opts) {
   Paths p;
   p.is_root_ = ::geteuid() == 0;
-#if REPRO_TEST_HOOKS
-  if (auto root = env.get("REPRO_SYSROOT")) p.sysroot_ = absolute(*root);
-  if (env.get("REPRO_TEST_ASSUME_ROOT") == "1") p.is_root_ = true;
+#if REPD_TEST_HOOKS
+  if (auto root = env.get("REPD_SYSROOT")) p.sysroot_ = absolute(*root);
+  if (env.get("REPD_TEST_ASSUME_ROOT") == "1") p.is_root_ = true;
 #endif
   auto user = resolve_target_user(env, p.is_root_);
   if (!user) return std::unexpected(user.error());
@@ -49,8 +49,10 @@ Result<Paths> Paths::detect(const Env& env, const PathsOptions& opts) {
   p.xdg_config_ = xdg_config ? absolute(*xdg_config) : p.user_.home + "/.config";
   p.xdg_state_ = xdg_state ? absolute(*xdg_state) : p.user_.home + "/.local/state";
   if (opts.config_override) p.config_root_ = absolute(p.expand(*opts.config_override));
-  else if (auto c = env.get("REPRO_CONFIG")) p.config_root_ = absolute(p.expand(*c));
-  else p.config_root_ = p.xdg_config_ + "/repro";
+  else if (auto c = env.get("REPD_CONFIG"))
+    p.config_root_ = absolute(p.expand(*c));
+  else
+    p.config_root_ = p.xdg_config_ + "/repd";
   return p;
 }
 
@@ -88,17 +90,17 @@ std::string Paths::physical(std::string_view logical) const {
 }
 
 std::string Paths::state_dir(Mode m) const {
-  if (m == Mode::User) return xdg_state_ + "/repro";
-  return physical("/var/lib/repro");
+  if (m == Mode::User) return xdg_state_ + "/repd";
+  return physical("/var/lib/repd");
 }
 
 std::string Paths::user_env_dir() const { return xdg_config_ + "/environment.d"; }
 
 std::vector<std::pair<std::string, std::string>> Paths::plugin_dirs(Mode m) const {
-  // The system directory is a build-time setting (-Dplugin_dir, REPRO_PLUGIN_DIR).
-  std::vector<std::pair<std::string, std::string>> dirs = {{physical(REPRO_PLUGIN_DIR), "system"}};
-  if (m == Mode::User) dirs.emplace_back(user_.home + "/.local/lib/repro", "user");
+  // The system directory is a build-time setting (-Dplugin_dir, REPD_PLUGIN_DIR).
+  std::vector<std::pair<std::string, std::string>> dirs = {{physical(REPD_PLUGIN_DIR), "system"}};
+  if (m == Mode::User) dirs.emplace_back(user_.home + "/.local/lib/repd", "user");
   return dirs;
 }
 
-}  // namespace repro
+}  // namespace repd

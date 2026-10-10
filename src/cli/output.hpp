@@ -4,7 +4,7 @@
 #include <string>
 #include <string_view>
 
-namespace repro {
+namespace repd {
 
 struct Style {
   bool color = false;
@@ -19,4 +19,4 @@ struct Style {
 
 void print_warning(std::string_view msg);
 
-}  // namespace repro
+}  // namespace repd

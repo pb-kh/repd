@@ -9,7 +9,7 @@
 #include "plan/resolver.hpp"
 #include "platform/fs.hpp"
 
-using namespace repro;
+using namespace repd;
 
 namespace {
 

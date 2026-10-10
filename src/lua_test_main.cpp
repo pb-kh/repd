@@ -1,20 +1,20 @@
-// repro-lua-test: runs a luaunit test file inside the same LuaJIT host as the
-// repro binary (embedded bootstrap + "repro.host"), plus vendored luaunit.
-// Usage: repro-lua-test TEST.lua [args...]
+// repd-lua-test: runs a luaunit test file inside the same LuaJIT host as the
+// repd binary (embedded bootstrap + "repd.host"), plus vendored luaunit.
+// Usage: repd-lua-test TEST.lua [args...]
 #include <print>
 
 #include "eval/host.hpp"
 #include "platform/fs.hpp"
 #include "platform/paths.hpp"
 
-namespace repro {
+namespace repd {
 std::span<const EmbeddedFile> luaunit_files();
 }
 
 int main(int argc, char** argv) {
-  using namespace repro;
+  using namespace repd;
   if (argc < 2) {
-    std::println(stderr, "usage: repro-lua-test TEST.lua [args...]");
+    std::println(stderr, "usage: repd-lua-test TEST.lua [args...]");
     return 2;
   }
   auto paths = Paths::detect(Env::from_process());

@@ -7,7 +7,7 @@
 
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 bool can_prompt(bool yes) { return !yes && ::isatty(0) == 1 && ::isatty(2) == 1; }
 
@@ -59,4 +59,4 @@ Result<std::string> prompt_provider(const std::string& iface,
   return chosen;
 }
 
-}  // namespace repro
+}  // namespace repd

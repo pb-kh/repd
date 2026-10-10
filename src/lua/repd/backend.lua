@@ -1,10 +1,10 @@
 -- Backend facades (research R17, contracts/lua-api.md). `rp.packages` and
 -- `rp.services` route through the host to whichever backend was selected
 -- (native .so or repo-local Lua). Mutating calls are APPLY-only.
-local host = require("repro.host")
-local canon = require("repro.canon")
-local err = require("repro.err")
-local util = require("repro.util")
+local host = require("repd.host")
+local canon = require("repd.canon")
+local err = require("repd.err")
+local util = require("repd.util")
 
 local M = {}
 
@@ -51,11 +51,11 @@ M.packages = {
   end,
   remove = function(names)
     names = string_list(names, "rp.packages.remove")
-    require_apply("rp.packages.remove", "repro v1 never removes packages; drop them from the module instead")
+    require_apply("rp.packages.remove", "repd v1 never removes packages; drop them from the module instead")
     return host.backend_call("packages", "remove", names)
   end,
   refresh = function()
-    require_apply("rp.packages.refresh", "use repro sync --upgrade for a full upgrade (a refresh alone is a partial upgrade)")
+    require_apply("rp.packages.refresh", "use repd sync --upgrade for a full upgrade (a refresh alone is a partial upgrade)")
     return host.backend_call("packages", "refresh")
   end,
 }

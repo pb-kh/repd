@@ -1,7 +1,7 @@
 // Service state through the selected services backend (FR-020).
 #include "apply/executors.hpp"
 
-namespace repro {
+namespace repd {
 
 Result<StepOutcome> apply_service(const Step& s, ApplyContext& ctx) {
   const auto& d = std::get<ServiceDesired>(s.desired);
@@ -18,4 +18,4 @@ Result<StepOutcome> apply_service(const Step& s, ApplyContext& ctx) {
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

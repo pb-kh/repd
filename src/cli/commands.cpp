@@ -19,7 +19,7 @@
 #include "state/run_lock.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 int report(const Error& e) {
   print_error(e);
@@ -27,8 +27,8 @@ int report(const Error& e) {
 }
 
 std::string version_string() {
-  return std::format("repro {} (lua-api {}, plugin-abi {}, luajit {}, sqlite {})", REPRO_VERSION,
-                     REPRO_LUA_API_VERSION, REPRO_PLUGIN_ABI_VERSION, REPRO_LUAJIT_COMMIT,
+  return std::format("repd {} (lua-api {}, plugin-abi {}, luajit {}, sqlite {})", REPD_VERSION,
+                     REPD_LUA_API_VERSION, REPD_PLUGIN_ABI_VERSION, REPD_LUAJIT_COMMIT,
                      sqlite3_libversion());
 }
 
@@ -75,8 +75,9 @@ Result<std::unique_ptr<Session>> loaded_session(const GlobalOptions& g, Mode mod
 Result<Db> open_store(const Session& s, Mode mode, Db::Access access) {
   auto db = Db::open(s.db_path(mode), access);
   if (!db && mode == Mode::System && !s.paths.is_root()) {
-    return fail(ec::kPrivilege, "the system state store is only readable by root",
-                "run: sudo repro " + std::string(access == Db::Access::ReadOnly ? "status -s" : "sync -s"));
+    return fail(
+        ec::kPrivilege, "the system state store is only readable by root",
+        "run: sudo repd " + std::string(access == Db::Access::ReadOnly ? "status -s" : "sync -s"));
   }
   return db;
 }
@@ -101,7 +102,7 @@ int cmd_init(const GlobalOptions& g, const std::optional<std::string>& dir, bool
   }
   const std::vector<std::pair<std::string, std::string>> files = {
       {repo.entry,
-       "-- repro configuration entry point (lua-api 1). See docs/lua-api.md.\n"
+       "-- repd configuration entry point (lua-api 1). See docs/lua-api.md.\n"
        "rp.profile {\n"
        "  name = \"main\",\n"
        "  description = \"Default setup\",\n"
@@ -117,8 +118,9 @@ int cmd_init(const GlobalOptions& g, const std::optional<std::string>& dir, bool
        "    { dest = \"~/.config/example.conf\", src = \"example.conf\", action = \"copy\" },\n"
        "  },\n"
        "}\n"},
-      {repo.modules_dir + "/base/files/example.conf", "# Example file managed by repro.\n"},
-      {repo.root + "/.gitignore", "# repro keeps its state outside the repository.\n.*.repro-tmp-*\n"},
+      {repo.modules_dir + "/base/files/example.conf", "# Example file managed by repd.\n"},
+      {repo.root + "/.gitignore",
+       "# repd keeps its state outside the repository.\n.*.repd-tmp-*\n"},
   };
   for (const auto& [path, content] : files) {
     if (auto r = fs.mkdirs(dirname(path), 0755); !r) return report(r.error());
@@ -126,7 +128,7 @@ int cmd_init(const GlobalOptions& g, const std::optional<std::string>& dir, bool
   }
   if (auto r = fs.mkdirs(repo.lua_plugins_dir, 0755); !r) return report(r.error());
   std::println("initialised {}", paths->display(repo.root));
-  std::println("next: repro sync -u --dry-run");
+  std::println("next: repd sync -u --dry-run");
   return kExitOk;
 }
 
@@ -136,19 +138,21 @@ int cmd_init(const GlobalOptions& g, const std::optional<std::string>& dir, bool
 
 int cmd_sync(const GlobalOptions& g, const SyncArgs& a, const std::vector<std::string>& argv) {
   if (a.user == a.system) {
-    return report(Error{std::string(ec::kUsage), "sync needs exactly one of -u (user pass) or -s (system pass)",
-                        "run: repro sync -u   (then: sudo repro sync -s)"});
+    return report(Error{std::string(ec::kUsage),
+                        "sync needs exactly one of -u (user pass) or -s (system pass)",
+                        "run: repd sync -u   (then: sudo repd sync -s)"});
   }
   const Mode mode = a.system ? Mode::System : Mode::User;
   auto session = Session::open(g, mode);
   if (!session) return report(session.error());
   Session& s = **session;
   if (mode == Mode::System && !s.paths.is_root()) {
-    return report(Error{std::string(ec::kPrivilege), "repro sync -s needs root", "run: sudo repro sync -s"});
+    return report(
+        Error{std::string(ec::kPrivilege), "repd sync -s needs root", "run: sudo repd sync -s"});
   }
   if (mode == Mode::User && ::geteuid() == 0 && s.paths.user().via_sudo) {
     return report(Error{std::string(ec::kPrivilege), "the user pass must not run as root",
-                        "run it without sudo: repro sync -u"});
+                        "run it without sudo: repd sync -u"});
   }
   auto providers = parse_provider_flags(a.providers);
   if (!providers) return report(providers.error());
@@ -180,7 +184,8 @@ int cmd_sync(const GlobalOptions& g, const SyncArgs& a, const std::vector<std::s
   if (!planned) {
     // Journal the failed attempt (outcome plan-error); nothing was changed.
     if (!a.dry_run && ledger) {
-      if (auto run = ledger->insert_run(to_string(mode), a.profile, join(argv, " "), REPRO_VERSION)) {
+      if (auto run =
+              ledger->insert_run(to_string(mode), a.profile, join(argv, " "), REPD_VERSION)) {
         (void)ledger->finish_run(*run, "plan-error", planned.error().exit_code(), RunCounts{});
       }
     }
@@ -267,7 +272,7 @@ int cmd_status(const GlobalOptions& g, Mode mode, const std::optional<std::strin
   const Mode o = other(mode);
   if (!planned->other_store_readable) {
     std::println("{}: unavailable (run: {})", to_string(o),
-                 o == Mode::System ? "sudo repro status -s" : "repro status -u");
+                 o == Mode::System ? "sudo repd status -s" : "repd status -u");
   } else {
     int pending_modules = 0;
     std::set<std::string> seen;
@@ -338,8 +343,9 @@ int cmd_journal(const GlobalOptions& g, Mode mode, int last, std::optional<std::
   if (run) {
     auto r = ledger.run(*run);
     if (!r) {
-      return report(Error{std::string(ec::kUnknown), std::format("no run #{} in {} mode", *run, to_string(mode)),
-                          "list recent runs with `repro journal`"});
+      return report(Error{std::string(ec::kUnknown),
+                          std::format("no run #{} in {} mode", *run, to_string(mode)),
+                          "list recent runs with `repd journal`"});
     }
     print_run(ledger, *r, (*session)->paths);
     return kExitOk;
@@ -447,7 +453,7 @@ int cmd_list(const GlobalOptions& g, const std::string& what, const std::optiona
     const Profile* prof = profile ? s.root.find_profile(*profile) : s.root.default_profile();
     if (profile && prof == nullptr) {
       return report(Error{std::string(ec::kUnknown), std::format("unknown profile '{}'", *profile),
-                          "list profiles with `repro list profiles`"});
+                          "list profiles with `repd list profiles`"});
     }
     auto lock = read_lock(*s.host, s.fs, s.repo);
     if (!lock) return report(lock.error());
@@ -487,7 +493,8 @@ int cmd_show(const GlobalOptions& g, const std::string& module, const std::optio
     for (const auto& [n, _] : s.modules) names.push_back(n);
     const std::string c = closest_match(module, names);
     return report(Error{std::string(ec::kUnknown), std::format("unknown module '{}'", module),
-                        c.empty() ? "list modules with `repro list modules`" : std::format("did you mean '{}'?", c)});
+                        c.empty() ? "list modules with `repd list modules`"
+                                  : std::format("did you mean '{}'?", c)});
   }
   if (it->second.is_interface()) {
     Resolver r(s.modules, ResolverInputs{});
@@ -498,7 +505,7 @@ int cmd_show(const GlobalOptions& g, const std::string& module, const std::optio
   const Profile* prof = profile ? s.root.find_profile(*profile) : s.root.default_profile();
   if (profile && prof == nullptr) {
     return report(Error{std::string(ec::kUnknown), std::format("unknown profile '{}'", *profile),
-                        "list profiles with `repro list profiles`"});
+                        "list profiles with `repd list profiles`"});
   }
   Value overrides{Map{}};
   if (prof != nullptr) {
@@ -554,4 +561,4 @@ int cmd_show(const GlobalOptions& g, const std::string& module, const std::optio
   return kExitOk;
 }
 
-}  // namespace repro
+}  // namespace repd

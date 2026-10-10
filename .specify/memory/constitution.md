@@ -32,14 +32,14 @@ Templates status:
 Follow-up TODOs: (none - no deferred placeholders)
 -->
 
-# repro Constitution
+# repd Constitution
 
 ## Core Principles
 
 ### I. Declarative & Reproducible Configuration
 
-repro is a NixOS-like environment tool: users declare the desired state of
-their system in configuration files, and `repro` applies those declarations.
+repd is a NixOS-like environment tool: users declare the desired state of
+their system in configuration files, and `repd` applies those declarations.
 The final system state MUST be a deterministic function of (configuration,
 current machine state); hidden or ambient state MUST NOT influence the
 result. Applying the same configuration to the same starting state MUST
@@ -52,15 +52,15 @@ to exist - a violation here is a product defect, not a style issue.
 ### II. Lua/LuaJIT as the Configuration Surface
 
 All user-facing configuration and user extension logic MUST be written in
-Lua and executed by the LuaJIT runtime embedded in the `repro` binary.
-Users MUST NOT need to rebuild or recompile `repro` to change, extend, or
+Lua and executed by the LuaJIT runtime embedded in the `repd` binary.
+Users MUST NOT need to rebuild or recompile `repd` to change, extend, or
 customize environment behavior. The Lua API exposed to configuration
 scripts is a public contract: it MUST be documented, and breaking changes
 to it MUST follow the versioning policy in the Governance section. C++
 core code MUST NOT parse or evaluate configuration directly; all
 configuration passes through the LuaJIT evaluation layer. Rationale: one
 scripting surface keeps the mental model small and makes user scripts
-portable across repro versions.
+portable across repd versions.
 
 ### III. C++23 Core, Hermetic Meson Builds
 
@@ -89,7 +89,7 @@ this domain is unacceptable risk.
 
 ### V. Safe, Idempotent & Observable Apply Operations
 
-`repro` applies configurations to real systems, so apply MUST be safe by
+`repd` applies configurations to real systems, so apply MUST be safe by
 construction:
 
 - A preview/dry-run mode MUST be available for every apply operation,
@@ -97,7 +97,7 @@ construction:
 - Apply MUST be idempotent: re-applying an already-applied configuration
   MUST be a no-op.
 - Destructive or partially-applied operations MUST be either transactional
-  or resumable/rollback-safe; `repro` MUST NOT leave a system in a state
+  or resumable/rollback-safe; `repd` MUST NOT leave a system in a state
   that cannot be recovered from or continued.
 - Every apply run MUST produce a structured, auditable log of what was
   changed, in what order, and with what result.
@@ -124,11 +124,11 @@ Technology stack policy:
 
 Constraints on scope:
 
-- `repro` MUST remain a single self-contained binary with no runtime
+- `repd` MUST remain a single self-contained binary with no runtime
   dependency on external interpreters or package managers other than what
   it explicitly manages.
 - User configuration files MUST be plain Lua source (or Lua source in a
-  repro-specific layout); no proprietary configuration format may be
+  repd-specific layout); no proprietary configuration format may be
   introduced without amending this constitution.
 
 ## Development Workflow & Quality Gates
@@ -153,7 +153,7 @@ Constraints on scope:
 
 ## Governance
 
-- This constitution is the highest authority for the `repro` project; it
+- This constitution is the highest authority for the `repd` project; it
   supersedes any conflicting practice, plan, or ad-hoc decision.
 - **Amendments** MUST be documented in this file with: the principle(s)
   changed, the rationale, and a migration plan for anything the change

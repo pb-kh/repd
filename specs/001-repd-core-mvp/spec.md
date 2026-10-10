@@ -1,21 +1,21 @@
-# Feature Specification: repro — Declarative Environment Configuration Core
+# Feature Specification: repd — Declarative Environment Configuration Core
 
-**Feature Branch**: `001-repro-core-mvp`
+**Feature Branch**: `001-repd-core-mvp`
 
 **Created**: 2026-10-09
 
 **Status**: Draft
 
-**Input**: User description: "Users write their entire environment configuration in one place as scripted, declarative config files; repro applies it. Configuration is modular (partial application), modules declare dependencies, interfaces may have multiple providers that the user is asked about once, domain engines (package/service managers) are pluggable add-ons, and every run records execution info so re-running only does what is still needed." (Gathered interactively in REQUIREMENTS.md; see that document for design-level context.)
+**Input**: User description: "Users write their entire environment configuration in one place as scripted, declarative config files; repd applies it. Configuration is modular (partial application), modules declare dependencies, interfaces may have multiple providers that the user is asked about once, domain engines (package/service managers) are pluggable add-ons, and every run records execution info so re-running only does what is still needed." (Gathered interactively in REQUIREMENTS.md; see that document for design-level context.)
 
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 — Declare the environment once, apply it safely (Priority: P1)
 
-A user sets up a repro configuration repository for their machine. They declare a
+A user sets up a repd configuration repository for their machine. They declare a
 small set of environment modules — things like "which packages my base system
 uses", "where my dotfiles live", "which environment variables my shell needs" —
-in declarative files. They run a preview that shows exactly what repro intends to
+in declarative files. They run a preview that shows exactly what repd intends to
 change, then apply in user mode. Their declared state materializes on the
 machine. Running the same command again is a fast no-op: nothing is re-applied.
 
@@ -32,18 +32,18 @@ preview (plan shown, nothing changed); apply (changes present); run again
 1. **Given** an empty home and a freshly scaffolded config repository, **When** the user runs a preview, **Then** the tool shows every intended change grouped by module in dependency order, and **the target machine is unchanged**.
 2. **Given** a previewed plan, **When** the user applies in user mode, **Then** all declared files, environment variables, and packages reachable by that mode exist in the declared state, and the run summary lists every change it made with its result.
 3. **Given** an already-applied, unchanged configuration, **When** the user applies again, **Then** the tool reports each module as up to date, performs **zero** changes, and completes quickly (target: under 2 seconds for typical repos, tens of modules).
-4. **Given** a declared destination file that already exists on disk with different content and was never managed by repro, **When** the user applies, **Then** repro refuses to overwrite that entry, explains why, and offers an explicit opt-in adoption path for it; all other steps are unaffected or (default) the run stops with a clear report.
-5. **Given** a declared file whose on-disk content drifted after a successful apply, **When** the user re-applies, **Then** repro detects the drift and restores the declared state without manual intervention.
+4. **Given** a declared destination file that already exists on disk with different content and was never managed by repd, **When** the user applies, **Then** repd refuses to overwrite that entry, explains why, and offers an explicit opt-in adoption path for it; all other steps are unaffected or (default) the run stops with a clear report.
+5. **Given** a declared file whose on-disk content drifted after a successful apply, **When** the user re-applies, **Then** repd detects the drift and restores the declared state without manual intervention.
 
 ---
 
 ### User Story 2 — Compose: dependencies and interchangeable providers (Priority: P2)
 
 A user adds a module for `dev/c++` tooling that requires a module for an editor
-environment. Repro resolves dependencies automatically and applies the editor
+environment. Repd resolves dependencies automatically and applies the editor
 module's work first. Now, some requirements are *interfaces*: multiple modules
 can provide "an IDE-like editor environment" (`dev/ide/vim`, `dev/ide/emacs`, …).
-The first time such a choice is needed, repro asks the user, lists the available
+The first time such a choice is needed, repd asks the user, lists the available
 providers with their descriptions, and **records the choice** in the
 configuration repository so future runs never ask again. The user can override
 the choice explicitly (per run, or in the configuration), and in non-interactive
@@ -65,7 +65,7 @@ work. Fully independent of Stories 1, 3, 5.
 3. **Given** a recorded provider choice, **When** subsequent runs are executed, **Then** no prompt occurs and the same provider is used.
 4. **Given** an explicit command-line override for a provider, **When** the user applies, **Then** the override wins over the recorded choice, and the decision file reflects the new decision with its source noted.
 5. **Given** a non-interactive execution (automation mode) and an unresolved provider ambiguity, **When** the user applies, **Then** the run fails with a clear list of eligible providers and **makes no changes**.
-6. **Given** a dependency cycle among modules, **When** the user runs anything that plans work, **Then** repro fails at plan time with the offending chain displayed and the machine is unchanged.
+6. **Given** a dependency cycle among modules, **When** the user runs anything that plans work, **Then** repd fails at plan time with the offending chain displayed and the machine is unchanged.
 
 ---
 
@@ -73,7 +73,7 @@ work. Fully independent of Stories 1, 3, 5.
 
 Some declared state is inherently administrative — system-wide service units,
 udev rules, system locale settings, system user accounts, files under system
-paths. Repro splits every plan by privilege: a **user pass** applies only
+paths. Repd splits every plan by privilege: a **user pass** applies only
 user-privilege work, and a **system pass** (run explicitly with administrator
 permission) applies only system-privilege work. Nothing silently escalates. A run
 in one mode leaves the other mode's work visibly pending, with a hint about the
@@ -118,7 +118,7 @@ change the plan accordingly. Independent of the others given a config repository
 **Acceptance Scenarios**:
 
 1. **Given** a declared default profile, **When** a run omits profile selection, **Then** the default profile's module set is used.
-2. **Given** multiple declared profiles and no default, **When** a run omits the flag, **Then** repro fails listing the profiles and the machine is unchanged.
+2. **Given** multiple declared profiles and no default, **When** a run omits the flag, **Then** repd fails listing the profiles and the machine is unchanged.
 3. **Given** a selected non-default profile, **When** a run executes, **Then** only modules selected by that profile (plus their required closures) are planned.
 4. **Given** two profiles that set different values for the same module parameter, **When** either is applied, **Then** the plan reflects the selected profile's value.
 5. **Given** provider overrides declared per profile, **When** that profile runs, **Then** the overrides take precedence over repository-wide pins of lesser precedence.
@@ -152,11 +152,11 @@ listing shows loaded extensions. Independently demonstrable.
 **Acceptance Scenarios**:
 
 1. **Given** a configuration whose steps are filesystem and environment only, **When** it is applied with zero backends installed, **Then** it succeeds without any add-on.
-2. **Given** a declared step requiring a backend add-on that is not installed, **When** the plan is built, **Then** repro stops with an error that names the exact add-on (e.g., the distribution package id) and how to install it; already-applied steps remain recorded and untouched.
-3. **Given** an eligible backend add-on installed, **When** it is not explicitly configured, **Then** repro auto-selects it and states the choice in the preview; an explicit configuration beats auto-selection.
-4. **Given** a lightweight extension declared inside the configuration repository, **When** it is enabled, **Then** its operations behave like a backend, and repro visibly flags its reduced-trust origin in output and in the extension list.
+2. **Given** a declared step requiring a backend add-on that is not installed, **When** the plan is built, **Then** repd stops with an error that names the exact add-on (e.g., the distribution package id) and how to install it; already-applied steps remain recorded and untouched.
+3. **Given** an eligible backend add-on installed, **When** it is not explicitly configured, **Then** repd auto-selects it and states the choice in the preview; an explicit configuration beats auto-selection.
+4. **Given** a lightweight extension declared inside the configuration repository, **When** it is enabled, **Then** its operations behave like a backend, and repd visibly flags its reduced-trust origin in output and in the extension list.
 5. **Given** several extensions loaded, **When** the user lists extensions, **Then** each is shown with its kind (namespace), name, origin path, and interface-version status; incompatible-version extensions are refused with both versions printed.
-6. **Given** a configuration that attempts to perform changes directly while it is being read (escaping the declarative contract), **When** evaluation proceeds, **Then** repro fails with an explanatory error telling the user to declare intent declaratively instead.
+6. **Given** a configuration that attempts to perform changes directly while it is being read (escaping the declarative contract), **When** evaluation proceeds, **Then** repd fails with an explanatory error telling the user to declare intent declaratively instead.
 
 ---
 
@@ -235,11 +235,11 @@ listing shows loaded extensions. Independently demonstrable.
 - **Configuration surface**: Per the project brief, configuration is authored as scripted, declarative files in the scripting language the brief mandates (Lua-family). This spec deliberately does **not** specify the engine/runtime, storage formats' internals, or delivery mechanics — those are plan/design concerns (see REQUIREMENTS.md and the project constitution).
 - **Target platform**: Linux-first (established by the constitution); representative distro package managers validate the backend design (first add-on: pacman-family), with the abstraction kept clean for others.
 - **Single machine per run**: A repository trains one machine at a time; multi-host inventories (beyond profiles) are out of scope for v1.
-- **Privilege model**: The user pass runs unattended as the invoking user; the system pass is invoked by the user through normal privilege channels (e.g., sudo) — repro never prompts for passwords or elevates itself.
+- **Privilege model**: The user pass runs unattended as the invoking user; the system pass is invoked by the user through normal privilege channels (e.g., sudo) — repd never prompts for passwords or elevates itself.
 - **Automation**: Non-interactive runs are a supported class (automation machines): ambiguous choices are hard errors, never silent guesses.
-- **Versioning/repro patterns**: Package operations address packages by name; version pinning of packages is out of scope for v1.
+- **Versioning/repd patterns**: Package operations address packages by name; version pinning of packages is out of scope for v1.
 - **Distribution of modules**: The tool does not fetch modules from the network by itself in v1; users obtain modules via their version-control workflow (or vendor them into the repository).
-- **Destructive actions**: v1 never deletes system users and never removes packages not recorded as repro-managed; sizeable "orphan" cleanup is a separate future feature, not this one.
+- **Destructive actions**: v1 never deletes system users and never removes packages not recorded as repd-managed; sizeable "orphan" cleanup is a separate future feature, not this one.
 - **Decisions file**: Committable and reviewed like source; it exists to make automation quiet, not to be hand-edited (though it remains valid plain text).
 
 ## Dependencies

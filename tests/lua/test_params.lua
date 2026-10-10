@@ -1,8 +1,8 @@
 -- Parameter declaration, type inference, validation and resolution (FR-017).
 local lu = require("luaunit")
-local params = require("repro.params")
-local builders = require("repro.builders")
-local err = require("repro.err")
+local params = require("repd.params")
+local builders = require("repd.builders")
+local err = require("repd.err")
 
 local function expect(code, fn, ...)
   local ok, e = pcall(fn, ...)
@@ -73,16 +73,16 @@ function TestParams.test_list_and_map_types()
 end
 
 function TestParams.test_with_params_receives_read_only_params()
-  local repro = require("repro")
-  local merge = require("repro.merge")
-  local sandbox = require("repro.sandbox")
+  local repd = require("repd")
+  local merge = require("repd.merge")
+  local sandbox = require("repd.sandbox")
   local decls = { theme = params.normalize("m", "theme", builders.param { default = "dark" }) }
   local values = params.resolve("m", decls, { theme = "light" })
   local fn = function(p)
     lu.assertErrorMsgContains("read-only", function() p.theme = "x" end)
     return { env = { THEME = p.theme } }
   end
-  local frag = fn(sandbox.read_only(values, "params"), repro.rp.sys)
+  local frag = fn(sandbox.read_only(values, "params"), repd.rp.sys)
   lu.assertEquals(merge.merge("m", { env = { A = "1" } }, frag).env, { A = "1", THEME = "light" })
 end
 

@@ -1,9 +1,9 @@
-// repro-openrc: services backend for OpenRC (contracts/plugin-abi.md).
+// repd-openrc: services backend for OpenRC (contracts/plugin-abi.md).
 // enabled = the service is in any runlevel (`rc-update show`); enable adds it to
 // `default`, disable removes it from all runlevels. active = `rc-service <svc>
 // status` exits 0. User scope maps to OpenRC user services (`--user`, 0.60+) and
 // is refused under root: it belongs to the user pass.
-#include <repro/plugin.h>
+#include <repd/plugin.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -15,8 +15,8 @@
 
 namespace {
 
-const repro_host* g_host = nullptr;
-const repro_host_api* g_api = nullptr;
+const repd_host* g_host = nullptr;
+const repd_host_api* g_api = nullptr;
 
 constexpr const char* kRunlevel = "default";
 
@@ -65,7 +65,7 @@ bool has_rc_service() {
 
 bool refuse_user_scope_as_root(const char* scope) {
   if (std::string_view(scope) == "user" && ::geteuid() == 0) {
-    g_api->set_error(g_host, "user services belong to the user pass (run: repro sync -u)");
+    g_api->set_error(g_host, "user services belong to the user pass (run: repd sync -u)");
     return true;
   }
   return false;
@@ -113,16 +113,16 @@ int probe(void*) {
   return has_rc_service() && !is_dir("/run/systemd/system") ? 1 : 0;
 }
 
-repro_status state(void*, const char* unit, const char* scope, int* enabled, int* active) {
-  if (refuse_user_scope_as_root(scope)) return REPRO_ERR;
+repd_status state(void*, const char* unit, const char* scope, int* enabled, int* active) {
+  if (refuse_user_scope_as_root(scope)) return REPD_ERR;
   std::string name;
-  if (!service_name(unit, &name)) return REPRO_ERR;
+  if (!service_name(unit, &name)) return REPD_ERR;
   auto exists = tool("rc-service", scope);
   exists.insert(exists.end(), {"--exists", name});
   if (run(exists).code != 0) {
     *enabled = -1;
     *active = 0;
-    return REPRO_OK;
+    return REPD_OK;
   }
   auto show = tool("rc-update", scope);
   show.insert(show.end(), {"--nocolor", "show"});
@@ -131,19 +131,19 @@ repro_status state(void*, const char* unit, const char* scope, int* enabled, int
     std::string msg = "rc-update show failed (exit " + std::to_string(s.code) + ")";
     if (!s.err.empty()) msg += ": " + s.err.substr(0, s.err.find('\n'));
     g_api->set_error(g_host, msg.c_str());
-    return REPRO_ERR;
+    return REPD_ERR;
   }
   *enabled = in_any_runlevel(s.out, name) ? 1 : 0;
   auto status = tool("rc-service", scope);
   status.insert(status.end(), {"--nocolor", name, "status"});
   *active = run(status).code == 0 ? 1 : 0;
-  return REPRO_OK;
+  return REPD_OK;
 }
 
-repro_status op(const char* verb, const char* unit, const char* scope) {
-  if (refuse_user_scope_as_root(scope)) return REPRO_ERR;
+repd_status op(const char* verb, const char* unit, const char* scope) {
+  if (refuse_user_scope_as_root(scope)) return REPD_ERR;
   std::string name;
-  if (!service_name(unit, &name)) return REPRO_ERR;
+  if (!service_name(unit, &name)) return REPD_ERR;
   const std::string v(verb);
   std::vector<std::string> argv;
   if (v == "enable") {
@@ -157,30 +157,40 @@ repro_status op(const char* verb, const char* unit, const char* scope) {
     argv.insert(argv.end(), {"--nocolor", name, v});
   }
   const Output o = run(argv);
-  if (o.code == 0) return REPRO_OK;
+  if (o.code == 0) return REPD_OK;
   std::string msg = argv[0] + " " + (v == "enable" ? "add" : v == "disable" ? "del" : v) + " " + name +
                     " failed (exit " + std::to_string(o.code) + ")";
   const std::string& detail = o.err.empty() ? o.out : o.err;
   if (!detail.empty()) msg += ": " + detail.substr(0, detail.find('\n'));
   g_api->set_error(g_host, msg.c_str());
-  return REPRO_ERR;
+  return REPD_ERR;
 }
 
-repro_status enable(void*, const char* unit, const char* scope) { return op("enable", unit, scope); }
-repro_status disable(void*, const char* unit, const char* scope) { return op("disable", unit, scope); }
-repro_status start(void*, const char* unit, const char* scope) { return op("start", unit, scope); }
-repro_status stop(void*, const char* unit, const char* scope) { return op("stop", unit, scope); }
+repd_status enable(void*, const char* unit, const char* scope) {
+  return op("enable", unit, scope);
+}
+repd_status disable(void*, const char* unit, const char* scope) {
+  return op("disable", unit, scope);
+}
+repd_status start(void*, const char* unit, const char* scope) {
+  return op("start", unit, scope);
+}
+repd_status stop(void*, const char* unit, const char* scope) {
+  return op("stop", unit, scope);
+}
 
-const repro_services_vt kVtable = {probe, state, enable, disable, start, stop};
+const repd_services_vt kVtable = {probe, state, enable, disable, start, stop};
 
 }  // namespace
 
-extern "C" int repro_plugin_abi(void) { return REPRO_PLUGIN_ABI; }
+extern "C" int repd_plugin_abi(void) {
+  return REPD_PLUGIN_ABI;
+}
 
-extern "C" int repro_plugin_init(int abi, const repro_host* host, const repro_host_api* api,
-                                 repro_registrar* reg, const repro_registrar_api* reg_api) {
-  if (abi != REPRO_PLUGIN_ABI) return 1;
+extern "C" int repd_plugin_init(int abi, const repd_host* host, const repd_host_api* api,
+                                repd_registrar* reg, const repd_registrar_api* reg_api) {
+  if (abi != REPD_PLUGIN_ABI) return 1;
   g_host = host;
   g_api = api;
-  return reg_api->register_services(reg, "openrc", REPRO_ADDON_VERSION, &kVtable, nullptr);
+  return reg_api->register_services(reg, "openrc", REPD_ADDON_VERSION, &kVtable, nullptr);
 }

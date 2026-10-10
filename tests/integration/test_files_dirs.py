@@ -3,7 +3,7 @@ config), `link` points one symlink at the whole directory."""
 
 import os
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 TREE = {
     "init.lua": "require('config.options')\n",
@@ -13,10 +13,10 @@ TREE = {
 }
 
 
-class DirectorySources(ReproTestCase):
+class DirectorySources(RepdTestCase):
     def setUp(self):
         super().setUp()
-        self.sb.write("repro.lua", 'rp.profile { name = "main", default = true, use = { "nvim" } }\n')
+        self.sb.write("repd.lua", 'rp.profile { name = "main", default = true, use = { "nvim" } }\n')
         for rel, text in TREE.items():
             self.sb.write(f"modules/nvim/files/nvim/{rel}", text)
         self.declare("copy")
@@ -64,7 +64,7 @@ class DirectorySources(ReproTestCase):
         r = self.sb.run("sync", "-u", "--adopt")
         self.assertOk(r)
         self.assertEqual(self.nvim("init.lua").read_text(), TREE["init.lua"])
-        backups = [p for p in self.nvim().iterdir() if p.name.startswith("init.lua.repro-adopted-")]
+        backups = [p for p in self.nvim().iterdir() if p.name.startswith("init.lua.repd-adopted-")]
         self.assertEqual(len(backups), 1)
         self.assertEqual(self.nvim("lua/config/keys.lua").read_text(), "-- not in the repo\n")
 
@@ -80,7 +80,7 @@ class DirectorySources(ReproTestCase):
         self.assertTrue(self.nvim().is_symlink())
         self.assertEqual(os.readlink(self.nvim()), str(self.sb.config / "modules/nvim/files/nvim"))
         self.assertEqual(self.nvim("lua/plugins/lsp.lua").read_text(), "return {}\n")
-        old = [p for p in self.nvim().parent.iterdir() if p.name.startswith("nvim.repro-adopted-")]
+        old = [p for p in self.nvim().parent.iterdir() if p.name.startswith("nvim.repd-adopted-")]
         self.assertEqual(len(old), 1)
         self.assertEqual((old[0] / "init.lua").read_text(), "-- old\n")
         self.assertIn("summary: up to date", self.sb.run("sync", "-u").out)

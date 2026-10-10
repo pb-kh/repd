@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include <repro/config.hpp>
+#include <repd/config.hpp>
 
 #include "eval/declaration.hpp"
 #include "plan/env_targets.hpp"
@@ -16,7 +16,7 @@
 #include "platform/paths.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 struct BuildContext {
   const Paths& paths;
@@ -67,4 +67,4 @@ void add_post_steps(std::vector<Step>& steps);
 // First module (in order) with user env, when the sh target is active; "" otherwise.
 std::string env_hook_owner(const std::vector<const ResolvedModule*>& modules, const EnvTargets& t);
 
-}  // namespace repro
+}  // namespace repd

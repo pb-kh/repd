@@ -2,7 +2,7 @@
 
 import time
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 SLOW = """
 return rp.module {
@@ -18,7 +18,7 @@ return rp.module {
 """
 
 
-class Concurrency(ReproTestCase):
+class Concurrency(RepdTestCase):
     fixture = "files-only"
 
     def setUp(self):
@@ -36,12 +36,12 @@ class Concurrency(ReproTestCase):
 
     def test_same_mode_one_refused(self):
         first = self.sb.spawn("sync", "-u", "slowuser")
-        self.wait_for_lock(self.sb.home / ".local/state/repro")
+        self.wait_for_lock(self.sb.home / ".local/state/repd")
         second = self.sb.run("sync", "-u", "slowuser")
         out, err = first.communicate(timeout=30)
         self.assertEqual(first.returncode, 0, out + err)
         self.assertError(second, "E_BUSY")
-        self.assertIn("another repro run is active in user mode (pid", second.err)
+        self.assertIn("another repd run is active in user mode (pid", second.err)
         # Read-only commands never wait for the lock.
         self.assertOk(self.sb.run("status", "slowuser") if False else self.sb.run("journal"))
 
@@ -57,7 +57,7 @@ class Concurrency(ReproTestCase):
 
     def test_dry_run_takes_no_lock(self):
         first = self.sb.spawn("sync", "-u", "slowuser")
-        self.wait_for_lock(self.sb.home / ".local/state/repro")
+        self.wait_for_lock(self.sb.home / ".local/state/repd")
         r = self.sb.run("sync", "-u", "slowuser", "--dry-run")
         first.communicate(timeout=30)
         self.assertOk(r)

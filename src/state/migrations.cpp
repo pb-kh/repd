@@ -2,7 +2,7 @@
 
 #include <array>
 
-namespace repro {
+namespace repd {
 namespace {
 
 constexpr std::string_view kV1 = R"sql(
@@ -82,10 +82,25 @@ CREATE TABLE managed_packages(
 );
 )sql";
 
-constexpr std::array<std::string_view, 1> kMigrations = {kV1};
+// The project was renamed from repro to repd.
+constexpr std::string_view kV2 = R"sql(
+ALTER TABLE runs RENAME COLUMN repro_version TO repd_version;
+)sql";
+
+constexpr std::array<std::string_view, 2> kMigrations = {kV1, kV2};
+
+// A TEMP view shadows main.runs for unqualified names.
+constexpr std::string_view kV1ReadOnly = R"sql(
+CREATE TEMP VIEW runs AS
+  SELECT id, started_at, finished_at, mode, profile, argv, repro_version AS repd_version, outcome,
+         exit_code, n_applied, n_skipped, n_failed, n_pending_other
+  FROM main.runs;
+)sql";
 
 }  // namespace
 
 std::span<const std::string_view> migrations() { return kMigrations; }
 
-}  // namespace repro
+std::string_view read_only_compat(int version) { return version == 1 ? kV1ReadOnly : ""; }
+
+}  // namespace repd

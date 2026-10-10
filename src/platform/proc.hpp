@@ -7,7 +7,7 @@
 
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 struct ProcResult {
   int code = 0;  // exit status, or 128+signal
@@ -32,4 +32,4 @@ int current_child_pid();
 // Last `max` bytes of `s` (output tails stored in the journal, ≤ 4 KiB).
 std::string tail(const std::string& s, std::size_t max = 4096);
 
-}  // namespace repro
+}  // namespace repd

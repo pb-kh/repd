@@ -6,7 +6,7 @@
 #include <string>
 #include <string_view>
 
-namespace repro {
+namespace repd {
 
 class Sha256 {
  public:
@@ -26,4 +26,4 @@ class Sha256 {
 
 std::string sha256_hex(std::string_view data);
 
-}  // namespace repro
+}  // namespace repd

@@ -17,7 +17,7 @@
 #include "util/errors.hpp"
 #include "util/value.hpp"
 
-namespace repro {
+namespace repd {
 
 struct ApplyContext {
   ApplyContext(const Paths& p, Fs& f) : paths(p), fs(f) {}
@@ -60,4 +60,4 @@ ManagedFile managed_row(const Step& s);
 std::string adoption_backup_path(const std::string& physical, const std::string& stamp);
 Error blocked_error(const Step& s, const Paths& paths);
 
-}  // namespace repro
+}  // namespace repd

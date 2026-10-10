@@ -5,7 +5,7 @@
 #include "plan/graph.hpp"
 #include "plan/scope.hpp"
 
-namespace repro {
+namespace repd {
 
 Evaluator::Evaluator(LuaHost& host, const Fs& fs, ConfigRepository repo)
     : host_(host), fs_(fs), repo_(std::move(repo)) {}
@@ -22,7 +22,7 @@ Result<RootConfig> Evaluator::load_root() {
   if (auto r = check_repository(fs_, repo_); !r) return std::unexpected(r.error());
   if (auto r = configure(); !r) return std::unexpected(r.error());
   PhaseScope eval(host_, Phase::Eval);
-  auto v = host_.call("load_root", {repo_.entry, "repro.lua"});
+  auto v = host_.call("load_root", {repo_.entry, "repd.lua"});
   if (!v) return std::unexpected(v.error());
   return RootConfig::from_value(*v);
 }
@@ -113,4 +113,4 @@ Result<ResolvedModule> Evaluator::resolve(const std::string& name, const Value& 
   return ResolvedModule::from_value(*v);
 }
 
-}  // namespace repro
+}  // namespace repd

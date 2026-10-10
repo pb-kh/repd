@@ -10,7 +10,7 @@
 
 extern char** environ;
 
-namespace repro {
+namespace repd {
 
 Env Env::from_process() {
   Env env;
@@ -36,7 +36,7 @@ Result<TargetUser> resolve_target_user(const Env& env, bool effective_root) {
     const passwd* pw = ::getpwnam(sudo_user->c_str());
     if (pw == nullptr) {
       return fail(ec::kConfig, std::format("SUDO_USER '{}' does not exist", *sudo_user),
-                  "run repro through sudo from a regular account");
+                  "run repd through sudo from a regular account");
     }
     user.name = pw->pw_name;
     user.uid = pw->pw_uid;
@@ -103,4 +103,4 @@ bool group_exists(const Fs& fs, const std::string& group_path, const std::string
                              [&](const auto& f) { return !f.empty() && f[0] == group; });
 }
 
-}  // namespace repro
+}  // namespace repd

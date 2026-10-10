@@ -12,7 +12,7 @@
 #include "eval/declaration.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 struct LockEntry {
   std::string provider;
@@ -24,7 +24,7 @@ struct ResolvedProvider {
   std::string interface;
   std::string provider;
   std::string source;    // cli|profile|pin|lock|only-option|prompt
-  bool persist = false;  // recorded in repro.lock.lua (cli, prompt, only-option)
+  bool persist = false;  // recorded in repd.lock.lua (cli, prompt, only-option)
 };
 
 using PromptFn = std::function<Result<std::string>(
@@ -35,7 +35,7 @@ struct ResolverInputs {
   std::map<std::string, std::string> cli;      // --provider I=M
   std::map<std::string, std::string> profile;  // profile.providers
   std::map<std::string, std::string> pins;     // rp.pin
-  std::map<std::string, LockEntry> lock;       // repro.lock.lua
+  std::map<std::string, LockEntry> lock;       // repd.lock.lua
   std::set<std::string> reselect;              // --reselect I
   bool interactive = false;                    // TTY and no --yes
   PromptFn prompt;
@@ -66,4 +66,4 @@ class Resolver {
   std::vector<std::string> warnings_;
 };
 
-}  // namespace repro
+}  // namespace repd

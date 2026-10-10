@@ -7,7 +7,7 @@
 #include "platform/fs.hpp"
 #include "util/strings.hpp"
 
-namespace repro::testing {
+namespace repd::testing {
 
 class MemFs final : public Fs {
  public:
@@ -126,4 +126,4 @@ class MemFs final : public Fs {
   }
 };
 
-}  // namespace repro::testing
+}  // namespace repd::testing

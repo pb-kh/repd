@@ -7,7 +7,7 @@
 #include <format>
 #include <print>
 
-namespace repro {
+namespace repd {
 
 int Error::exit_code() const {
   if (code == ec::kBlocked || code == ec::kStep) return kExitApplyFailed;
@@ -34,4 +34,4 @@ std::string did_you_mean(std::string_view candidate) {
   return std::format("did you mean '{}'?", candidate);
 }
 
-}  // namespace repro
+}  // namespace repd

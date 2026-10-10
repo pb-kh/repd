@@ -1,7 +1,7 @@
 #!/bin/sh
-# Test stub: logs the call and emulates usermod (-s SHELL, -a -G GROUPS) inside $REPRO_SYSROOT.
+# Test stub: logs the call and emulates usermod (-s SHELL, -a -G GROUPS) inside $REPD_SYSROOT.
 set -eu
-echo "usermod $*" >> "$REPRO_SYSROOT/stub.log"
+echo "usermod $*" >> "$REPD_SYSROOT/stub.log"
 shell="" groups=""
 while [ $# -gt 1 ]; do
   case "$1" in
@@ -12,7 +12,7 @@ while [ $# -gt 1 ]; do
   esac
 done
 name="$1"
-p="$REPRO_SYSROOT/etc/passwd" g="$REPRO_SYSROOT/etc/group"
+p="$REPD_SYSROOT/etc/passwd" g="$REPD_SYSROOT/etc/group"
 touch "$p" "$g"
 grep -q "^$name:" "$p" || { echo "usermod: user '$name' does not exist" >&2; exit 6; }
 if [ -n "$shell" ]; then

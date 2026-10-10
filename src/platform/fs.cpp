@@ -12,7 +12,7 @@
 
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 namespace {
 
 std::unexpected<Error> io_error(std::string_view what, const std::string& path, int err) {
@@ -34,7 +34,7 @@ FileStat from_stat(const struct stat& st) {
 }
 
 std::string temp_sibling(const std::string& path) {
-  return std::format("{}/.{}.repro-tmp-{}", dirname(path), basename(path), ::getpid());
+  return std::format("{}/.{}.repd-tmp-{}", dirname(path), basename(path), ::getpid());
 }
 
 }  // namespace
@@ -185,4 +185,4 @@ Status RealFs::remove(const std::string& path) {
   return {};
 }
 
-}  // namespace repro
+}  // namespace repd

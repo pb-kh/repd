@@ -13,15 +13,15 @@
 #include "platform/users.hpp"
 #include "util/strings.hpp"
 
-using namespace repro;
-using repro::testing::MemFs;
+using namespace repd;
+using repd::testing::MemFs;
 
 namespace {
 TargetUser alice() { return TargetUser{"alice", 1000, 1000, "/home/alice", false}; }
 }  // namespace
 
 TEST_CASE("paths: tilde expansion and display") {
-  const Paths p = Paths::make(alice(), "/home/alice/.config/repro");
+  const Paths p = Paths::make(alice(), "/home/alice/.config/repd");
   CHECK(p.expand("~") == "/home/alice");
   CHECK(p.expand("~/.bashrc") == "/home/alice/.bashrc");
   CHECK(p.expand("/etc/x") == "/etc/x");
@@ -36,8 +36,8 @@ TEST_CASE("paths: sysroot redirects only non-home paths") {
   CHECK(p.physical("/etc/locale.gen") == "/sandbox/root/etc/locale.gen");
   CHECK(p.physical("~/.bashrc") == "/home/alice/.bashrc");
   CHECK(p.physical("/sandbox/root/etc/x") == "/sandbox/root/etc/x");
-  CHECK(p.state_dir(Mode::System) == "/sandbox/root/var/lib/repro");
-  CHECK(p.state_dir(Mode::User) == "/home/alice/.local/state/repro");
+  CHECK(p.state_dir(Mode::System) == "/sandbox/root/var/lib/repd");
+  CHECK(p.state_dir(Mode::User) == "/home/alice/.local/state/repd");
   const Paths q = Paths::make(alice(), "/cfg");
   CHECK(q.physical("/etc/locale.gen") == "/etc/locale.gen");
 }
@@ -46,19 +46,19 @@ TEST_CASE("paths: plugin dirs include the user dir only in user mode") {
   const Paths p = Paths::make(alice(), "/cfg");
   CHECK(p.plugin_dirs(Mode::User).size() == 2);
   CHECK(p.plugin_dirs(Mode::System).size() == 1);
-  CHECK(p.plugin_dirs(Mode::System).front().first == REPRO_PLUGIN_DIR);
-  CHECK(p.plugin_dirs(Mode::User).back().first == "/home/alice/.local/lib/repro");
+  CHECK(p.plugin_dirs(Mode::System).front().first == REPD_PLUGIN_DIR);
+  CHECK(p.plugin_dirs(Mode::User).back().first == "/home/alice/.local/lib/repd");
   CHECK(p.plugin_dirs(Mode::User).back().second == "user");
 }
 
-TEST_CASE("paths: detect honours --config, REPRO_CONFIG and XDG") {
+TEST_CASE("paths: detect honours --config, REPD_CONFIG and XDG") {
   Env env;
   env.vars = {{"HOME", "/home/alice"}, {"XDG_CONFIG_HOME", "/home/alice/xdg"}};
   auto p = Paths::detect(env);
   REQUIRE(p);
-  CHECK(p->config_root() == "/home/alice/xdg/repro");
+  CHECK(p->config_root() == "/home/alice/xdg/repd");
   CHECK(p->user_env_dir() == "/home/alice/xdg/environment.d");
-  env.vars["REPRO_CONFIG"] = "~/dots";
+  env.vars["REPD_CONFIG"] = "~/dots";
   p = Paths::detect(env);
   REQUIRE(p);
   CHECK(p->config_root() == "/home/alice/dots");
@@ -99,7 +99,8 @@ TEST_CASE("memfs: fake behaves like a filesystem") {
 
 TEST_CASE("realfs: atomic write, symlink, mkdirs, list") {
   namespace stdfs = std::filesystem;
-  const stdfs::path dir = stdfs::temp_directory_path() / ("repro-test-" + std::to_string(::getpid()));
+  const stdfs::path dir =
+      stdfs::temp_directory_path() / ("repd-test-" + std::to_string(::getpid()));
   stdfs::remove_all(dir);
   RealFs fs;
   const std::string base = dir.string();
@@ -128,7 +129,7 @@ TEST_CASE("proc: argv spawn with captured output and exit status") {
   auto s = run_process({"cat"}, ProcOptions{.stdin_data = "piped"});
   REQUIRE(s);
   CHECK(s->out == "piped");
-  auto missing = run_process({"repro-definitely-not-a-command"});
+  auto missing = run_process({"repd-definitely-not-a-command"});
   CHECK_FALSE(missing);
   // argv is never interpreted by a shell
   auto lit = run_process({"echo", "$HOME;", "x"});

@@ -1,21 +1,21 @@
 """US3 acceptance 1, 2, 4, 5: separate user and system passes with separate state."""
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class TwoPasses(ReproTestCase):
+class TwoPasses(RepdTestCase):
     fixture = "mixed"
 
     def test_user_pass_reports_pending_system_work(self):
         r = self.sb.run("sync", "-u")
         self.assertOk(r)
         self.assertIn("ok    shell/files/~/.zshrc", r.out)
-        self.assertIn("ok    shell/env/~/.local/share/repro/env.d/shell.sh", r.out)
-        self.assertIn("· env     REPRO_SITE=lab  (/etc/profile.d/repro-shell.sh)  [system pass]", r.out)
+        self.assertIn("ok    shell/env/~/.local/share/repd/env.d/shell.sh", r.out)
+        self.assertIn("· env     REPD_SITE=lab  (/etc/profile.d/repd-shell.sh)  [system pass]", r.out)
         self.assertIn("· users   builder  create (shell /bin/zsh; groups wheel, audio)  [system pass]", r.out)
         self.assertIn("· udev    /etc/udev/rules.d/70-keyboard.rules  create  [system pass]", r.out)
-        self.assertRegex(r.out, r"summary: 3 changes in this pass, 6 pending for system pass \(run: sudo repro sync -s\)")
-        self.assertRegex(r.out, r"done: 3 applied; 6 pending for system pass \(run: sudo repro sync -s\)")
+        self.assertRegex(r.out, r"summary: 3 changes in this pass, 6 pending for system pass \(run: sudo repd sync -s\)")
+        self.assertRegex(r.out, r"done: 3 applied; 6 pending for system pass \(run: sudo repd sync -s\)")
         self.assertFalse(self.sb.sys_path("/etc/motd").exists())
         self.assertEqual(self.sb.stub_log(), "")
 
@@ -25,9 +25,9 @@ class TwoPasses(ReproTestCase):
         self.assertFalse(self.sb.home_path(".zshrc").exists(), "user files untouched by the system pass")
         self.assertIn("· files   ~/.zshrc  create  [user pass]", r.out)
         self.assertEqual(self.sb.sys_path("/etc/motd").read_text(), "Welcome\n")
-        self.assertIn("export REPRO_SITE='lab'", self.sb.sys_path("/etc/profile.d/repro-shell.sh").read_text())
+        self.assertIn("export REPD_SITE='lab'", self.sb.sys_path("/etc/profile.d/repd-shell.sh").read_text())
         gen = self.sb.sys_path("/etc/locale.gen").read_text()
-        self.assertIn("# BEGIN repro\nde_DE.UTF-8 UTF-8\nen_US.UTF-8 UTF-8\n# END repro\n", gen)
+        self.assertIn("# BEGIN repd\nde_DE.UTF-8 UTF-8\nen_US.UTF-8 UTF-8\n# END repd\n", gen)
         self.assertIn("LANG=en_US.UTF-8", self.sb.sys_path("/etc/locale.conf").read_text())
         self.assertTrue(self.sb.sys_path("/etc/udev/rules.d/70-keyboard.rules").exists())
         log = self.sb.stub_log()
@@ -36,8 +36,8 @@ class TwoPasses(ReproTestCase):
         self.assertEqual(log.count("udevadm control --reload"), 1)
         self.assertIn("ok    system/devices/post/udev-reload", r.out)
         self.assertIn("ok    system/locale/post/locale-gen", r.out)
-        self.assertTrue(self.sb.sys_path("/var/lib/repro/repro.db").exists())
-        self.assertFalse((self.sb.home / ".local/state/repro/repro.db").exists(), "separate stores")
+        self.assertTrue(self.sb.sys_path("/var/lib/repd/repd.db").exists())
+        self.assertFalse((self.sb.home / ".local/state/repd/repd.db").exists(), "separate stores")
 
     def test_both_passes_then_both_skip(self):
         self.assertOk(self.sb.run("sync", "-u"))

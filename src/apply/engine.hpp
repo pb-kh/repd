@@ -13,7 +13,7 @@
 #include "plan/plan.hpp"
 #include "state/ledger.hpp"
 
-namespace repro {
+namespace repd {
 
 struct ApplyResult {
   int exit_code = kExitOk;
@@ -31,4 +31,4 @@ Result<StepOutcome> apply_step(const Step& s, ApplyContext& ctx);
 ApplyResult apply_plan(Plan& plan, ApplyContext& actx, CheckContext& cctx, Ledger& ledger,
                        const std::string& argv, const LineSink& out);
 
-}  // namespace repro
+}  // namespace repd

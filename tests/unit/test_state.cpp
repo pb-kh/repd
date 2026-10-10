@@ -10,7 +10,7 @@
 #include "state/ledger.hpp"
 #include "state/run_lock.hpp"
 
-using namespace repro;
+using namespace repd;
 namespace stdfs = std::filesystem;
 
 namespace {
@@ -20,7 +20,7 @@ struct TempDir {
   TempDir() {
     static int counter = 0;
     path = (stdfs::temp_directory_path() /
-            ("repro-state-" + std::to_string(::getpid()) + "-" + std::to_string(counter++)))
+            ("repd-state-" + std::to_string(::getpid()) + "-" + std::to_string(counter++)))
                .string();
     stdfs::remove_all(path);
   }
@@ -31,22 +31,22 @@ struct TempDir {
 
 TEST_CASE("db: creates the store with 0600 permissions and current schema") {
   TempDir t;
-  auto db = Db::open(t.path + "/state/repro.db", Db::Access::ReadWrite);
+  auto db = Db::open(t.path + "/state/repd.db", Db::Access::ReadWrite);
   REQUIRE(db);
   CHECK(db->schema_version() == Db::kSchemaVersion);
-  CHECK((stdfs::status(t.path + "/state/repro.db").permissions() & stdfs::perms::all) ==
+  CHECK((stdfs::status(t.path + "/state/repd.db").permissions() & stdfs::perms::all) ==
         (stdfs::perms::owner_read | stdfs::perms::owner_write));
   CHECK((stdfs::status(t.path + "/state").permissions() & stdfs::perms::all) ==
         stdfs::perms::owner_all);
   // Reopening is idempotent.
-  db = Db::open(t.path + "/state/repro.db", Db::Access::ReadWrite);
+  db = Db::open(t.path + "/state/repd.db", Db::Access::ReadWrite);
   REQUIRE(db);
   CHECK(db->schema_version() == Db::kSchemaVersion);
 }
 
 TEST_CASE("db: read-only open of a missing store yields no database") {
   TempDir t;
-  auto db = Db::open(t.path + "/missing/repro.db", Db::Access::ReadOnly);
+  auto db = Db::open(t.path + "/missing/repd.db", Db::Access::ReadOnly);
   REQUIRE(db);
   CHECK_FALSE(db->is_open());
   CHECK_FALSE(stdfs::exists(t.path + "/missing"));
@@ -55,19 +55,45 @@ TEST_CASE("db: read-only open of a missing store yields no database") {
 TEST_CASE("db: refuses a store with a newer schema") {
   TempDir t;
   {
-    auto db = Db::open(t.path + "/repro.db", Db::Access::ReadWrite);
+    auto db = Db::open(t.path + "/repd.db", Db::Access::ReadWrite);
     REQUIRE(db);
     REQUIRE(db->exec("UPDATE meta SET value = '999' WHERE key = 'schema_version'"));
   }
-  auto db = Db::open(t.path + "/repro.db", Db::Access::ReadWrite);
+  auto db = Db::open(t.path + "/repd.db", Db::Access::ReadWrite);
   REQUIRE_FALSE(db);
   CHECK(db.error().code == "E_SCHEMA");
   CHECK(db.error().message.find("999") != std::string::npos);
 }
 
+TEST_CASE("db: a schema 1 store (from repro) is readable as is and migrated on write") {
+  TempDir t;
+  const std::string path = t.path + "/repd.db";
+  {
+    auto db = Db::open(path, Db::Access::ReadWrite);
+    REQUIRE(db);
+    REQUIRE(Ledger(*db).insert_run("user", "p", "repro sync -u", "0.1.0"));
+    REQUIRE(db->exec("ALTER TABLE runs RENAME COLUMN repd_version TO repro_version;"
+                     "UPDATE meta SET value = '1' WHERE key = 'schema_version'"));
+  }
+  {
+    auto db = Db::open(path, Db::Access::ReadOnly);
+    REQUIRE(db);
+    CHECK(db->schema_version() == 1);
+    const auto runs = Ledger(*db).recent_runs(5);
+    REQUIRE(runs.size() == 1);
+    CHECK(runs[0].repd_version == "0.1.0");
+  }
+  auto db = Db::open(path, Db::Access::ReadWrite);
+  REQUIRE(db);
+  CHECK(db->schema_version() == 2);
+  const auto runs = Ledger(*db).recent_runs(5);
+  REQUIRE(runs.size() == 1);
+  CHECK(runs[0].repd_version == "0.1.0");
+}
+
 TEST_CASE("ledger: runs, steps, module state and managed files") {
   TempDir t;
-  auto db = Db::open(t.path + "/repro.db", Db::Access::ReadWrite);
+  auto db = Db::open(t.path + "/repd.db", Db::Access::ReadWrite);
   REQUIRE(db);
   Ledger ledger(*db);
   auto run = ledger.insert_run("user", "laptop", "{\"sync\",\"-u\"}", "0.1.0");
@@ -125,7 +151,7 @@ TEST_CASE("ledger: runs, steps, module state and managed files") {
 
 TEST_CASE("ledger: transaction rolls back on failure") {
   TempDir t;
-  auto db = Db::open(t.path + "/repro.db", Db::Access::ReadWrite);
+  auto db = Db::open(t.path + "/repd.db", Db::Access::ReadWrite);
   REQUIRE(db);
   Ledger ledger(*db);
   auto r = ledger.transaction([&]() -> Status {

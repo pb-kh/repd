@@ -1,4 +1,4 @@
-# repro — Requirements
+# repd — Requirements
 
 **Status**: draft (pre-specification, gathered against Constitution v1.0.0)
 **Input sources**: project brief from the user, `.specify/memory/constitution.md`, requirements Q&A session (2026-10-09).
@@ -7,11 +7,11 @@
 
 ## 1. Purpose & Vision
 
-`repro` is a NixOS-like, declarative environment tool for (Arch-style) Linux systems:
+`repd` is a NixOS-like, declarative environment tool for (Arch-style) Linux systems:
 the user declares the desired state of their machine in **one place** — a folder of
-Lua modules and supporting config files — and `repro` applies those declarations.
+Lua modules and supporting config files — and `repd` applies those declarations.
 
-In contrast to Nix/home-manager, `repro` manages the *existing* system in place
+In contrast to Nix/home-manager, `repd` manages the *existing* system in place
 (packages via the distro package manager, dotfiles in `$HOME`, system files under
 `/etc`) rather than building a separate profile world.
 
@@ -19,18 +19,18 @@ The product stands on three pillars:
 
 1. **Declarative modules** — the unit of configuration is a *module* (e.g. `dev/c++`)
    that declares intent (packages, files, env vars, services…). Modules can be
-   applied **partially** (`repro sync` a subset, or only user-vs-system halves).
+   applied **partially** (`repd sync` a subset, or only user-vs-system halves).
 2. **Composability** — modules declare dependencies on other modules, and on
    *interfaces* that may have several **providers** (e.g. `dev/ide` is provided by
    `dev/ide/vim`, `dev/ide/emacs`, …). Provider choice is asked once and recorded.
-3. **Extensible core** — the `repro` binary is a thin C++23/LuaJIT host. Namespace
+3. **Extensible core** — the `repd` binary is a thin C++23/LuaJIT host. Namespace
    implementations (`rp.packages`, `rp.services`, …) are plugins: shared objects
    (`pacman`, `dnf`, `nix`; `systemd`, `openrc`) shipped as separate packages
-   (e.g. `pacman -S repro repro-pacman repro-openrc`), or pure-Lua small backends.
+   (e.g. `pacman -S repd repd-pacman repd-openrc`), or pure-Lua small backends.
 
 All state necessary to avoid redoing work (per-module decision hashes, per-step
 results) is recorded in a **SQLite state database** (one per privilege mode), so a
-re-run of `repro sync` only applies what is missing or stale.
+re-run of `repd sync` only applies what is missing or stale.
 
 ## 2. Constitution Conformance Summary
 
@@ -45,17 +45,17 @@ re-run of `repro sync` only applies what is missing or stale.
 Note on the single-binary constraint: the *core* remains one self-contained binary.
 Backend `.so` plugins are the explicitly managed extension mechanism (analogous to
 the constitution's allowance for the package managers it manages), NOT core
-dependencies; `repro` must still start and report a clear error with zero plugins.
+dependencies; `repd` must still start and report a clear error with zero plugins.
 
 ## 3. Glossary
 
-- **Module** — a Lua file under `modules/` matching `repro's` module contract; the
+- **Module** — a Lua file under `modules/` matching `repd's` module contract; the
   unit of selection, planning, hashing and state.
 - **Interface** — a module-like declaration (`rp.interface{}`) that other modules can
   *require*; it has no content of its own.
 - **Provider** — a module (`rp.module{}`) with `provides = "<interface>"`.
 - **Profile** — a named selection of modules (+ params + provider overrides) defined
-  in `repro.lua`; picked per-run via `--profile` (default profile exists).
+  in `repd.lua`; picked per-run via `--profile` (default profile exists).
 - **Mode** — privilege context of a run: **user** (`-u`) or **system** (`-s`).
 - **Step** — the smallest apply unit (install package `clang`, link file, enable
   unit…). Steps belong to a module; a step has a privilege level.
@@ -63,39 +63,39 @@ dependencies; `repro` must still start and report a clear error with zero plugin
   (source bytes, params, resolved providers, backend, versions). Used for skipping.
 - **Backend** — a plugin implementation behind a pluggable namespace
   (`packages`, `services`, …).
-- **Lock** — `repro.lock.lua`, a repo-local, generated Lua file recording provider
+- **Lock** — `repd.lock.lua`, a repo-local, generated Lua file recording provider
   decisions and where they came from.
 
 ## 4. System Overview
 
 ```
                        ┌────────────────── user's config repo ──────────────┐
-                       │  repro.lua   repro.lock.lua   modules/   files/    │
+                       │  repd.lua   repd.lock.lua   modules/   files/    │
                        │  plugins/lua/*.lua                                 │
                        └────────────────────────┬───────────────────────────┘
                                                 │ 1. discover & eval (LuaJIT, recording only)
-   /usr/lib{,64}/repro/plugins/*.so ── load ─▶  │ 2. resolve modules + interfaces/providers
+   /usr/lib{,64}/repd/plugins/*.so ── load ─▶  │ 2. resolve modules + interfaces/providers
                                                 │ 3. plan steps (pure, deterministic)
                                                 │    ├─ required privilege per step
                                                 │    └─ decision hash per module
-        repro sync -u ──── dry-run? ────────────┤
-        (user steps → ~/.local/state/repro.db)  │ 4. apply / answer providers
-        sudo repro sync -s                      │ 5. journal each step, roll up module status
-        (system steps → /var/lib/repro/db)      │    skip modules whose hash is unchanged+applied
+        repd sync -u ──── dry-run? ────────────┤
+        (user steps → ~/.local/state/repd.db)  │ 4. apply / answer providers
+        sudo repd sync -s                      │ 5. journal each step, roll up module status
+        (system steps → /var/lib/repd/db)      │    skip modules whose hash is unchanged+applied
                                                 └──────────────────────────────────────────────
 ```
 
-Two roles run the same binary: **user mode** (`repro sync -u`) applies only
+Two roles run the same binary: **user mode** (`repd sync -u`) applies only
 user-privilege steps, writing its state under the user's XDG state dir; **system
-mode** (`sudo repro sync -s`) applies only system-privilege steps, writing state to
-`/var/lib/repro`. There is **no self-escalation**: the split is explicit (user
+mode** (`sudo repd sync -s`) applies only system-privilege steps, writing state to
+`/var/lib/repd`. There is **no self-escalation**: the split is explicit (user
 decision, 2026-10-09).
 
 ## 5. Functional Requirements
 
 ### 5.1 Evaluation model (E)
 
-- **FR-E-1** The root config file is `repro.lua`; it is plain Lua 5.1/LuaJIT source evaluated once per invocation. No other declarative formats exist.
+- **FR-E-1** The root config file is `repd.lua`; it is plain Lua 5.1/LuaJIT source evaluated once per invocation. No other declarative formats exist.
 - **FR-E-2** The root config may declare: options (`rp.option`), profiles
   (`rp.profile{}`); nothing else is required for a valid config.
 - **FR-E-3** Evaluation is **recording-only**: every `rp.*` builder callable in
@@ -136,7 +136,7 @@ decision, 2026-10-09).
   profile entries; invalid values error at plan time.
 - **FR-M-8** Partial application is first-class:
   - a run applies only the steps whose privilege matches the run's mode;
-  - explicit module subsets can be selected on the CLI (`repro sync -u dev/c++`);
+  - explicit module subsets can be selected on the CLI (`repd sync -u dev/c++`);
     their `requires` closures are included automatically.
 - **FR-M-9** `priority` (integer, lower = preferred) ranks same-interface
   providers when auto-resolution is used.
@@ -150,16 +150,16 @@ decision, 2026-10-09).
 - **FR-I-3** Provider resolution precedence (highest first):
   1. CLI override `--provider <iface>=<module>` (full module path),
   2. profile `providers` table,
-  3. root `repro.lua` pins (inherited defaults),
-  4. `repro.lock.lua` recorded choice,
+  3. root `repd.lua` pins (inherited defaults),
+  4. `repd.lock.lua` recorded choice,
   5. exactly one available provider → auto-select,
   6. interactive prompt (listing providers with descriptions; default = lowest
      `priority`),
   7. non-interactive (`--yes`/no TTY) with >1 candidate → hard error listing
      candidates.
   A record of the winning rule is kept in the lock (`source` field).
-- **FR-I-4** Provider choices are recorded in `repro.lock.lua` (generated, in the
-  config repo) so later runs never re-ask. `repro sync` never writes the lock in
+- **FR-I-4** Provider choices are recorded in `repd.lock.lua` (generated, in the
+  config repo) so later runs never re-ask. `repd sync` never writes the lock in
   `--dry-run`. Un-pinned choices can be re-asked with `--reselect <iface>`.
 - **FR-I-5** A provider module can be used directly; in that case no ask happens
   for its interface unless something else also requires that interface.
@@ -167,9 +167,9 @@ decision, 2026-10-09).
 ### 5.4 Profiles (P)
 
 - **FR-P-1** `rp.profile{ name=, description=, use={...}, providers={...},
-  default=true? }` declares a named module selection in `repro.lua`.
+  default=true? }` declares a named module selection in `repd.lua`.
 - **FR-P-2** `use` entries are strings or `{ name=, params={...} }` tables.
-- **FR-P-3** `repro sync --profile NAME` selects one profile; without it, the
+- **FR-P-3** `repd sync --profile NAME` selects one profile; without it, the
   profile flagged `default = true` runs; if none flagged and profiles exist →
   error listing profiles. A `providers` table in the profile overrides pins and
   feeds the same precedence chain as FR-I-3.
@@ -190,12 +190,12 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
   - `src` starting with `./`/`../` resolves relative to the module file dir,
     otherwise relative to the config repo's `files/`;
   - parent dirs are created; `dest` may use `~`;
-  - **adoption guard**: if the dest exists, is not owned by repro (no matching
+  - **adoption guard**: if the dest exists, is not owned by repd (no matching
     digest in state) and differs from the desired content → refuse; provide
     `--adopt` per-run or `adopt = true` per-entry.
 - **FR-A-3 env** — `env = { EDITOR = "nvim", ... }`. User scope writes
-  `~/.config/environment.d/90-repro-user.conf`; system scope writes
-  `/etc/environment.d/90-repro-system.conf`. A `repro env-sh` helper prints shell
+  `~/.config/environment.d/90-repd-user.conf`; system scope writes
+  `/etc/environment.d/90-repd-system.conf`. A `repd env-sh` helper prints shell
   integration snippets for shells that don't read environment.d (documented in
   README; the shell itself is never auto-edited).
 - **FR-A-4 services** — `services = { { unit=, scope="system"|"user",
@@ -226,9 +226,9 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
 - **FR-B-3** Backend sources:
   - **`.so` plugins** via a small C ABI (see §9 sketch; ABI version constant;
     mismatch → refused with both versions printed). Loaded with `dlopen(RTLD_NOW|RTLD_LOCAL)`.
-    Search path: `/usr/lib/repro/plugins/`, `/usr/lib64/repro/plugins/`,
-    `~/.local/lib/repro/plugins/`, `<repro>/plugins/*.so`. Distributed by distro
-    packages (`repro-pacman`, `repro-openrc`, …).
+    Search path: `/usr/lib/repd/plugins/`, `/usr/lib64/repd/plugins/`,
+    `~/.local/lib/repd/plugins/`, `<repd>/plugins/*.so`. Distributed by distro
+    packages (`repd-pacman`, `repd-openrc`, …).
   - **pure-Lua plugins**: `plugins/lua/*.lua` in the config repo, returning
     `rp.backend{ namespace=, name=, ops={...} }`. Intended for experiments and
     (crucially) test fixtures.
@@ -239,12 +239,12 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
 - **FR-B-5** The core ships **no built-in backend**; if none is available/selectable,
   planning any packages/services step fails with a message naming the missing
   plugin package. Files/env/no-op backends-less configs must still work.
-- **FR-B-6** `repro plugins list [--user|--system]` shows loaded plugins, their
+- **FR-B-6** `repd plugins list [--user|--system]` shows loaded plugins, their
   namespace+name, ABI and file path. Loading is fail-soft: one broken plugin
-  disables only itself; the failure is reported and repro continues.
+  disables only itself; the failure is reported and repd continues.
 - **FR-B-7** Trust model (documented, not enforced in v1): anything on the plugin
   paths runs with the user/root's privileges. Distro path is trusted by
-  installation; the user path is warned about in `repro plugins list` output.
+  installation; the user path is warned about in `repd plugins list` output.
 
 ### 5.7 Execution semantics (X)
 
@@ -263,14 +263,14 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
   re-attempts only unfinished work (already-`ok` steps skip via their
   satisfaction checks).
 - **FR-X-6 Advisory when mismatched**: `sync -u` on config with pending system
-  steps prints a notice to run `sudo repro sync -s` (and vice versa). Modes
+  steps prints a notice to run `sudo repd sync -s` (and vice versa). Modes
   never cross their privilege boundary.
 
 ### 5.8 State, hash, journal (S)
 
 - **FR-S-1** State lives in per-mode SQLite databases (pinned subproject):
-  - user: `~/.local/state/repro/repro.db`
-  - system: `/var/lib/repro/repro.db`
+  - user: `~/.local/state/repd/repd.db`
+  - system: `/var/lib/repd/repd.db`
   Schema version is stored and migrations are shipped in-core.
 - **FR-S-2** Core tables (sketch in §10): `runs`, `steps`, `modules`,
   `providers`. Writes are transactional (WAL); a `flock` guards concurrent runs
@@ -278,7 +278,7 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
 - **FR-S-3** **Decision hash** per module = sha256 over: module file bytes,
   transitive bytes of the module's local file dependencies,
   resolved params, resolved providers (name→provider map), the selected
-  backends (namespace+name+version), repro version and Lua API version.
+  backends (namespace+name+version), repd version and Lua API version.
 - **FR-S-4** Skip logic: a module whose decision hash equals the recorded one AND
   has no failed/pending steps AND no pending steps in this mode → skipped with
   `up to date`. `--refresh <module>` re-applies explicitly.
@@ -287,14 +287,14 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
   meaningful the **content digest** of produced files and the backend's raw
   output tail (bounded). The run row records mode, profile, total counts, exit
   code — full audit per Constitution V (Constitution Principle V).
-- **FR-S-6** `repro journal [-u|-s] [--last N]` pretty-prints the audit trail.
-  `repro status` summarizes modules: `applied` / `stale` (hash changed) /
+- **FR-S-6** `repd journal [-u|-s] [--last N]` pretty-prints the audit trail.
+  `repd status` summarizes modules: `applied` / `stale` (hash changed) /
   `pending` / `failed`, per mode.
-- **FR-S-7** `repro.lock.lua` is human-readable, Lua-syntax (Constitution: no
+- **FR-S-7** `repd.lock.lua` is human-readable, Lua-syntax (Constitution: no
   proprietary formats), machine-regenerated, and contains provider assignments
   with timestamp + decision source. The lock is refreshed on run when prompts
-  resolved; `repro sync` reproduces its own lock.
-- **FR-S-8** When repro upgrades, modules whose backends/API version changed are
+  resolved; `repd sync` reproduces its own lock.
+- **FR-S-8** When repd upgrades, modules whose backends/API version changed are
   replanned (the versions are inside the hash).
 
 ### 5.9 CLI (C)
@@ -302,23 +302,23 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
 - **FR-C-1** Commands (v1 surface):
 
 ```
-repro init [--dir PATH]                       # scaffold config repo
-repro list modules|profiles|providers|plugins
-repro show <module> [--profile NAME]          # resolved declaration of one module
-repro sync -u|--user | -s|--system            # REQUIRED mode flag (--user optional default)
+repd init [--dir PATH]                       # scaffold config repo
+repd list modules|profiles|providers|plugins
+repd show <module> [--profile NAME]          # resolved declaration of one module
+repd sync -u|--user | -s|--system            # REQUIRED mode flag (--user optional default)
            [MODULES...] [--profile NAME]
            [--dry-run] [--yes] [--adopt] [--refresh MODULE ...]
            [--provider IFACE=PATH ...] [--reselect IFACE ...] [--keep-going]
-repro status [-u|-s] [--profile NAME]
-repro journal [-u|-s] [--last N]
-repro plugins list
+repd status [-u|-s] [--profile NAME]
+repd journal [-u|-s] [--last N]
+repd plugins list
 ```
 
 - **FR-C-2** `-s` requires effective root; otherwise error with the hint
-  `sudo repro sync -s`. `-u` requires identical SUDO_USER handling: when run as
+  `sudo repd sync -s`. `-u` requires identical SUDO_USER handling: when run as
   root, the config/state paths resolve to `$SUDO_USER`'s home unless
-  `--config`/`REPRO_CONFIG` override (root run must find the *user's* repo).
-- **FR-C-3** Module subset: `repro sync -u dev/c++` plans dev/c++ and its required
+  `--config`/`REPD_CONFIG` override (root run must find the *user's* repo).
+- **FR-C-3** Module subset: `repd sync -u dev/c++` plans dev/c++ and its required
   closure only.
 - **FR-C-4** Exit codes: 0 success; 1 apply failure; 2 config/plan/usage error;
   130 interrupted (Ctrl-C). All failures print the failing step id on the last line.
@@ -327,7 +327,7 @@ repro plugins list
 
 ## 6. Non-Functional Requirements
 
-- **NFR-1 Performance**: a fully-up-to-date `repro sync -u` completes in < 1s
+- **NFR-1 Performance**: a fully-up-to-date `repd sync -u` completes in < 1s
   (eval + hash checks only; no backend calls except cheap installed-queries).
 - **NFR-2 Size**: core binary < ~5 MB stripped; LuaJIT + SQLite pinned via Meson
   subprojects, no other mandatory deps.
@@ -348,9 +348,9 @@ repro plugins list
 | Deferred | Reasoning / revisit when |
 |---|---|
 | Package version constraints | Backend-incompatible semantics; packages are name-based v1. |
-| Package removal/prune of repro-orphaned pkgs | Needs ownership ledger UI; v2 with `repro prune`. |
+| Package removal/prune of repd-orphaned pkgs | Needs ownership ledger UI; v2 with `repd prune`. |
 | User deletion / `state="absent"` for users | Too destructive for v1 defaults. |
-| Network module fetch (`repro fetch`), registries | Git + vendor copies suffice in v1. |
+| Network module fetch (`repd fetch`), registries | Git + vendor copies suffice in v1. |
 | Templating engine (mustache etc.) | Lua string functions cover it, generating `content = function()` or string per hash. |
 | Multi-host sync from one machine run, host-groups | Profiles cover most; hosts can come later as a profile superset. |
 | Secrets management (SOPS/age) | v2. |
@@ -363,10 +363,10 @@ repro plugins list
 The examples below are the **contract shape** the spec must refine (names are
 proposals, shapes are normative).
 
-### 8.1 Root config — `repro.lua`
+### 8.1 Root config — `repd.lua`
 
 ```lua
--- ~/.config/repro/repro.lua
+-- ~/.config/repd/repd.lua
 rp.option("packages.default_backend", "auto")        -- or "pacman", "nix", ...
 rp.option("services.backend", "auto")        -- "systemd", "openrc"
 
@@ -456,7 +456,7 @@ return rp.module {
 SUBSYSTEM=="leds", ACTION=="add", TEST=="brightness", ATTR{brightness}="0"
 ]] } },
   services = { { unit = "systemd-timesyncd", state = "enabled" } },
-  users    = { { name = "repro-demo", shell = "/usr/bin/zsh", groups = { "video" } } },
+  users    = { { name = "repd-demo", shell = "/usr/bin/zsh", groups = { "video" } } },
 }
 ```
 
@@ -510,16 +510,16 @@ return rp.backend {
 ### 8.7 `.so` plugin ABI (sketch; details = design phase)
 
 ```c
-/* <repro/plugin.h>, shipped for backend authors */
-#define REPRO_PLUGIN_ABI 1
-typedef struct repro_registrar    repro_registrar;
-typedef struct repro_backend_vt { /* installed/install/remove/refresh fn ptrs */ ... } repro_backend_vt;
+/* <repd/plugin.h>, shipped for backend authors */
+#define REPD_PLUGIN_ABI 1
+typedef struct repd_registrar    repd_registrar;
+typedef struct repd_backend_vt { /* installed/install/remove/refresh fn ptrs */ ... } repd_backend_vt;
 
-/* symbol searched by repro; abi must match REPRO_PLUGIN_ABI or plugin is refused */
-int repro_plugin_init(int abi_version, repro_registrar *reg);
+/* symbol searched by repd; abi must match REPD_PLUGIN_ABI or plugin is refused */
+int repd_plugin_init(int abi_version, repd_registrar *reg);
 /* registrar C API:
-   repro_register_backend(reg, const char *ns, const char *name,
-                          const repro_backend_vt *ops, void *userdata);      */
+   repd_register_backend(reg, const char *ns, const char *name,
+                          const repd_backend_vt *ops, void *userdata);      */
 ```
 
 The C++ core wraps the vtable into the `rp.packages`/`rp.services` facade so Lua
@@ -528,9 +528,9 @@ never touches cdata from plugins; plugin ABI is independent of C++ ABI.
 ## 9. Suggested user folder structure
 
 ```
-~/.config/repro/                     ← the config repo (git recommended)
-├── repro.lua                         root: options + profiles
-├── repro.lock.lua                    generated; provider decisions (committed)
+~/.config/repd/                     ← the config repo (git recommended)
+├── repd.lua                         root: options + profiles
+├── repd.lock.lua                    generated; provider decisions (committed)
 ├── modules/
 │   ├── base.lua                      always-on: core user files, minimal env
 │   ├── dev/
@@ -548,7 +548,7 @@ never touches cdata from plugins; plugin ABI is independent of C++ ABI.
 ├── plugins/
 │   └── lua/                           ← pure-Lua backends/experiments
 │       └── fake-packages.lua
-└── (state lives OUTSIDE the repo: ~/.local/state/repro/repro.db)
+└── (state lives OUTSIDE the repo: ~/.local/state/repd/repd.db)
 ```
 
 Loading rules:
@@ -556,14 +556,14 @@ Loading rules:
   `modules/x.lua` for interface/provider nesting (`dev/ide` + `dev/ide/vim`).
 - `files{.src}` with `./`-prefix → relative to the module file (self-contained
   vendored modules); otherwise → relative to `files/`.
-- `repro init` scaffold produces: `repro.lua` with a default profile, a starting
+- `repd init` scaffold produces: `repd.lua` with a default profile, a starting
   `base.lua` module, `.gitignore` (state db is never in the repo).
 
 ## 10. Proposed internals plan (implementation view)
 
 Two binaries of interest to Meson:
-- `repro` — main CLI binary (eval, plan, apply, journal).
-- `repro-lua-test` — dev-only runner for vendored `luaunit` suites (Lua API tests).
+- `repd` — main CLI binary (eval, plan, apply, journal).
+- `repd-lua-test` — dev-only runner for vendored `luaunit` suites (Lua API tests).
 
 Core C++ components (suggest): `src/eval/` (LuaJIT host, bootstrap lua), `src/plan/`
 (graph, resolver, hunks, hash), `src/apply/` (engine, journaling), `src/state/`
@@ -573,7 +573,7 @@ Core C++ components (suggest): `src/eval/` (LuaJIT host, bootstrap lua), `src/pl
 SQLite schema sketch:
 
 ```sql
-meta(key TEXT PRIMARY KEY, value TEXT);           -- schema_version, repro_version
+meta(key TEXT PRIMARY KEY, value TEXT);           -- schema_version, repd_version
 runs(id INTEGER PRIMARY KEY, started TEXT, mode TEXT, profile TEXT,
      exit_code INTEGER, counts TEXT /*json*/);
 modules(run_id, name, decision_hash TEXT, status TEXT,
@@ -586,10 +586,10 @@ providers(run_id, interface TEXT, provider TEXT, source TEXT,
 ```
 
 Milestones (proposal; each is Constitution-conformant: tests first):
-- **M0** Skeleton: Meson, LuaJIT bootstrap, `rp` namespace scaffolding, `repro
+- **M0** Skeleton: Meson, LuaJIT bootstrap, `rp` namespace scaffolding, `repd
   --version`, eval-only dry path with fixture repos.
 - **M1** Eval + discovery: modules/interfaces/profiles/params, graph+cycle errors,
-  `list`/`show`, `repro init`.
+  `list`/`show`, `repd init`.
 - **M2** Plan + dry-run: steps, decision hashes, provider resolution incl. ask
   + lockfile, `--dry-run` output.
 - **M3** Apply + state: SQLite state, fake-backend-driven integration tests for
@@ -605,9 +605,9 @@ pins recorded for hermetic builds (no luarocks at runtime; no network at build):
 
 | Library | Purpose | Why this one |
 |---|---|---|
-| **inspect.lua** (kikito) | Debug pretty-printing for `repro show` / error dumps | Tiny, stdlib-only, MIT |
-| **serpent.lua** | Deterministic table serialization → feeds decision hashes and `repro.lock.lua` writing | Deterministic iteration; 1 file; MIT |
-| **luaunit.lua** | Test framework for the embedded-Lua test binary `repro-lua-test` | 1 file, integrates with `meson test`; keeps tests in Lua, testing the actual Lua API |
+| **inspect.lua** (kikito) | Debug pretty-printing for `repd show` / error dumps | Tiny, stdlib-only, MIT |
+| **serpent.lua** | Deterministic table serialization → feeds decision hashes and `repd.lock.lua` writing | Deterministic iteration; 1 file; MIT |
+| **luaunit.lua** | Test framework for the embedded-Lua test binary `repd-lua-test` | 1 file, integrates with `meson test`; keeps tests in Lua, testing the actual Lua API |
 | lpeg (via LuaJIT) | Available but NOT a dependency for v1 code; used opportunistically by users in their config | Already inside LuaJIT |
 | cjson / luasocket / penlight | **Not bundled** | Host provides fs/exec/sqlite via C++; keeping the Lua surface minimal is a feature (YAGNI, Constitution simplicity gate) |
 
@@ -620,9 +620,9 @@ only heavy addition, justified by the user's state-DB choice.
 |---|---|---|
 | 1 | Parameter-value references (`rp.param_value`) exact syntax; string interpolation vs reference objects | Reference objects that substitute at plan time; keep hive simple |
 | 2 | `providers` "none of the above" for an interface (skip provider entirely) | Defer to v2 unless user asks |
-| 3 | Cross-mode consistency display (status reading both dbs, readable perms of /var/lib/repro state file) | Readable-but-not-writable system state file for `status` |
+| 3 | Cross-mode consistency display (status reading both dbs, readable perms of /var/lib/repd state file) | Readable-but-not-writable system state file for `status` |
 | 4 | Hook system for cross-module ordering beyond `requires` (e.g. "after udev") | YAGNI v1 |
-| 5 | Env for shells that ignore environment.d | Ship `repro env-sh` docs page v1, real shell plugin later |
+| 5 | Env for shells that ignore environment.d | Ship `repd env-sh` docs page v1, real shell plugin later |
 
 ## 13. Acceptance / testability notes
 

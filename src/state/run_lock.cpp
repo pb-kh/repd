@@ -8,7 +8,7 @@
 #include <cstring>
 #include <format>
 
-namespace repro {
+namespace repd {
 
 RunLock& RunLock::operator=(RunLock&& o) noexcept {
   if (this != &o) {
@@ -30,7 +30,7 @@ Result<RunLock> RunLock::acquire(const std::string& state_dir, Mode mode) {
   const int fd = ::open(path.c_str(), O_RDWR | O_CREAT | O_CLOEXEC, 0600);
   if (fd < 0) {
     return fail(ec::kIo, std::format("cannot open {}: {}", path, std::strerror(errno)),
-                mode == Mode::System ? "run: sudo repro sync -s" : "check the state directory");
+                mode == Mode::System ? "run: sudo repd sync -s" : "check the state directory");
   }
   if (::flock(fd, LOCK_EX | LOCK_NB) != 0) {
     char buf[32] = {};
@@ -38,7 +38,7 @@ Result<RunLock> RunLock::acquire(const std::string& state_dir, Mode mode) {
     ::close(fd);
     const std::string pid = n > 0 ? std::string(buf, static_cast<std::size_t>(n)) : "?";
     return fail(ec::kBusy,
-                std::format("another repro run is active in {} mode (pid {})", to_string(mode),
+                std::format("another repd run is active in {} mode (pid {})", to_string(mode),
                             pid.substr(0, pid.find('\n'))),
                 "wait for it to finish, then run again");
   }
@@ -47,4 +47,4 @@ Result<RunLock> RunLock::acquire(const std::string& state_dir, Mode mode) {
   return RunLock(fd);
 }
 
-}  // namespace repro
+}  // namespace repd

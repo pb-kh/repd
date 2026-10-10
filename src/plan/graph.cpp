@@ -9,7 +9,7 @@
 #include "plan/scope.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 namespace {
 
@@ -98,7 +98,7 @@ Result<Closure> select_scope(const std::map<std::string, ModuleMeta>& modules,
     if (!modules.contains(name)) {
       std::string hint = suggest_module(name, known);
       return fail(ec::kUnknown, std::format("unknown module '{}'", r),
-                  hint.empty() ? "list available modules with `repro list modules`" : hint);
+                  hint.empty() ? "list available modules with `repd list modules`" : hint);
     }
     wanted[name] = wanted[name] || extras;
   }
@@ -214,4 +214,4 @@ Result<Closure> select_scope(const std::map<std::string, ModuleMeta>& modules,
   return c;
 }
 
-}  // namespace repro
+}  // namespace repd

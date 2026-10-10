@@ -5,8 +5,8 @@
 #include "eval/evaluate.hpp"
 #include "temp_repo.hpp"
 
-using namespace repro;
-using repro::testing::TempRepo;
+using namespace repd;
+using repd::testing::TempRepo;
 
 namespace {
 
@@ -20,7 +20,7 @@ struct Harness {
       : paths(Paths::make(TargetUser{"a", 1, 1, "/home/a", false}, repo.root)),
         host(paths, fs, Mode::User),
         eval(host, fs, ConfigRepository::at(repo.root)) {
-    repo.write("repro.lua", "");
+    repo.write("repd.lua", "");
     repo.write("modules/term.lua", R"(
       return rp.module {
         params = {

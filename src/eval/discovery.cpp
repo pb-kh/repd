@@ -5,14 +5,15 @@
 
 #include "plan/scope.hpp"
 
-namespace repro {
+namespace repd {
 
 Status check_repository(const Fs& fs, const ConfigRepository& repo) {
   if (fs.stat(repo.entry).type != FileType::File) {
-    return fail(ec::kConfig, std::format("no repro.lua in {}", repo.root),
-                fs.stat(repo.root).exists()
-                    ? "create repro.lua (see `repro init`) or pass --config PATH"
-                    : "run `repro init` to scaffold a configuration repository, or pass --config PATH");
+    return fail(
+        ec::kConfig, std::format("no repd.lua in {}", repo.root),
+        fs.stat(repo.root).exists()
+            ? "create repd.lua (see `repd init`) or pass --config PATH"
+            : "run `repd init` to scaffold a configuration repository, or pass --config PATH");
   }
   return {};
 }
@@ -74,4 +75,4 @@ std::vector<DiscoveredModule> discover_lua_plugins(const Fs& fs, const ConfigRep
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

@@ -9,7 +9,7 @@
 
 #include "util/value.hpp"
 
-namespace repro {
+namespace repd {
 
 enum class ModuleKind { Module, Interface };
 
@@ -93,7 +93,7 @@ struct ResolvedModule {
   std::optional<LocaleEntry> locale;
   std::vector<UdevEntry> udev;
   std::vector<ActionDecl> actions;
-  Value decl;  // full plain declaration (fingerprint, `repro show`)
+  Value decl;  // full plain declaration (fingerprint, `repd show`)
 
   static ResolvedModule from_value(const Value& v);
 };
@@ -136,4 +136,4 @@ struct LuaBackendSpec {
   bool can_upgrade_packages = false;  // packages: ops.upgrade_packages is defined
 };
 
-}  // namespace repro
+}  // namespace repd

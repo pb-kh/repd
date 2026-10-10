@@ -13,8 +13,8 @@
 #include "state/db.hpp"
 #include "state/ledger.hpp"
 
-using namespace repro;
-using repro::testing::MemFs;
+using namespace repd;
+using repd::testing::MemFs;
 
 namespace {
 
@@ -31,13 +31,13 @@ struct Fixture {
   Fixture() {
     static int n = 0;
     db_path = (std::filesystem::temp_directory_path() /
-               ("repro-apply-" + std::to_string(::getpid()) + "-" + std::to_string(n++) + ".db"))
+               ("repd-apply-" + std::to_string(::getpid()) + "-" + std::to_string(n++) + ".db"))
                   .string();
     db = std::move(*Db::open(db_path, Db::Access::ReadWrite));
     ledger = std::make_unique<Ledger>(db);
     fs.put_dir("/home/alice");
     fs.put_file("/cfg/files/gitconfig", "[user]\n");
-    fs.put_file("/cfg/repro.lua", "");
+    fs.put_file("/cfg/repd.lua", "");
   }
   ~Fixture() {
     std::filesystem::remove(db_path);
@@ -116,8 +116,8 @@ TEST_CASE("builder: deterministic ids, class order then key order, privileges") 
                    "dev/git/files/~/.config/git/config",
                    "dev/git/files/~/.gitconfig",
                    "dev/git/files/~/.hushlogin",
-                   "dev/git/env//etc/environment.d/90-repro-dev--git.conf",
-                   "dev/git/env/~/.config/environment.d/90-repro-dev--git.conf",
+                   "dev/git/env//etc/environment.d/90-repd-dev--git.conf",
+                   "dev/git/env/~/.config/environment.d/90-repd-dev--git.conf",
                });
   CHECK(steps[0].privilege == Mode::System);  // pacman
   CHECK(std::get<PackagesDesired>(steps[0].desired).names == std::vector<std::string>{"git", "vim"});
@@ -166,20 +166,25 @@ TEST_CASE("builder: scope=system under home is rejected; missing source is repor
 TEST_CASE("env: one file per module and target, quoted for each consumer") {
   const std::map<std::string, std::string> vars = {{"Z", "1"}, {"A", "it's a \\ test"}};
   CHECK(env_file_content("environment.d", "dev/git", vars) ==
-        "# Managed by repro (module dev/git). Do not edit.\nA=it's a \\ test\nZ=1\n");
+        "# Managed by repd (module dev/git). Do not edit.\nA=it's a \\ test\nZ=1\n");
   CHECK(env_file_content("sh", "dev/git", vars) ==
-        "# Managed by repro (module dev/git). Do not edit.\nexport A='it'\\''s a \\ test'\nexport Z='1'\n");
+        "# Managed by repd (module dev/git). Do not edit.\nexport A='it'\\''s a \\ test'\nexport "
+        "Z='1'\n");
   CHECK(env_file_content("fish", "dev/git", vars) ==
-        "# Managed by repro (module dev/git). Do not edit.\nset -gx A 'it\\'s a \\\\ test'\nset -gx Z '1'\n");
+        "# Managed by repd (module dev/git). Do not edit.\nset -gx A 'it\\'s a \\\\ test'\nset -gx "
+        "Z '1'\n");
   const Paths p = Paths::make(TargetUser{"alice", 1000, 1000, "/home/alice", false}, "/cfg");
-  CHECK(env_file_path(p, "sh", Mode::User, "dev/git") == "/home/alice/.local/share/repro/env.d/dev--git.sh");
-  CHECK(env_file_path(p, "sh", Mode::System, "dev/git") == "/etc/profile.d/repro-dev--git.sh");
-  CHECK(env_file_path(p, "fish", Mode::User, "dev/git") == "/home/alice/.config/fish/conf.d/repro-dev--git.fish");
-  CHECK(env_file_path(p, "fish", Mode::System, "dev/git") == "/etc/fish/conf.d/repro-dev--git.fish");
+  CHECK(env_file_path(p, "sh", Mode::User, "dev/git") ==
+        "/home/alice/.local/share/repd/env.d/dev--git.sh");
+  CHECK(env_file_path(p, "sh", Mode::System, "dev/git") == "/etc/profile.d/repd-dev--git.sh");
+  CHECK(env_file_path(p, "fish", Mode::User, "dev/git") ==
+        "/home/alice/.config/fish/conf.d/repd-dev--git.fish");
+  CHECK(env_file_path(p, "fish", Mode::System, "dev/git") == "/etc/fish/conf.d/repd-dev--git.fish");
   CHECK(env_file_path(p, "environment.d", Mode::User, "dev/git") ==
-        "/home/alice/.config/environment.d/90-repro-dev--git.conf");
+        "/home/alice/.config/environment.d/90-repd-dev--git.conf");
   CHECK(sh_profile_block(p)[1] ==
-        "for f in \"$HOME/.local/share/repro/env.d\"/*.sh; do [ -r \"$f\" ] && . \"$f\"; done; unset f");
+        "for f in \"$HOME/.local/share/repd/env.d\"/*.sh; do [ -r \"$f\" ] && . \"$f\"; done; "
+        "unset f");
 }
 
 TEST_CASE("env targets: auto follows the login shell and the init system") {
@@ -219,13 +224,14 @@ TEST_CASE("env: sh target adds one managed block to the login profile") {
   }
   REQUIRE(block != nullptr);
   CHECK(block->id == "dev/git/env/~/.profile");
-  CHECK(block->summary == "~/.profile  add repro block (load ~/.local/share/repro/env.d/*.sh)");
+  CHECK(block->summary == "~/.profile  add repd block (load ~/.local/share/repd/env.d/*.sh)");
   for (auto& s : steps) f.apply(s);
   const std::string profile = f.fs.read("/home/alice/.profile").value();
-  CHECK(profile.starts_with("export PATH=$HOME/bin:$PATH\n# BEGIN repro\n"));
+  CHECK(profile.starts_with("export PATH=$HOME/bin:$PATH\n# BEGIN repd\n"));
   CHECK(f.fs.lstat("/home/alice/.profile").mode == 0600);
-  CHECK(f.fs.read("/home/alice/.local/share/repro/env.d/dev--git.sh").value().find("export GIT_EDITOR='vim'") !=
-        std::string::npos);
+  CHECK(f.fs.read("/home/alice/.local/share/repd/env.d/dev--git.sh")
+            .value()
+            .find("export GIT_EDITOR='vim'") != std::string::npos);
   auto again = f.build(module_with_files());
   f.check(again);
   for (auto& s : again) CHECK(s.check == CheckResult::Satisfied);
@@ -256,15 +262,15 @@ TEST_CASE("files: fresh apply, then everything is satisfied") {
   }
   CHECK(steps[0].summary == "~/.config/git/config  copy from files/gitconfig");
   CHECK(steps[1].summary == "~/.gitconfig  link -> files/gitconfig");
-  CHECK(steps[3].summary ==
-        "A=1, GIT_EDITOR=vim  (~/.config/environment.d/90-repro-dev--git.conf)");
+  CHECK(steps[3].summary == "A=1, GIT_EDITOR=vim  (~/.config/environment.d/90-repd-dev--git.conf)");
   for (auto& s : steps) f.apply(s);
   CHECK(f.fs.lstat("/home/alice/.gitconfig").type == FileType::Symlink);
   CHECK(f.fs.readlink("/home/alice/.gitconfig").value() == "/cfg/files/gitconfig");
   CHECK(f.fs.read("/home/alice/.config/git/config").value() == "[user]\n");
   CHECK(f.fs.lstat("/home/alice/.config/git/config").mode == 0600);
-  CHECK(f.fs.read("/home/alice/.config/environment.d/90-repro-dev--git.conf").value().find("GIT_EDITOR=vim") !=
-        std::string::npos);
+  CHECK(f.fs.read("/home/alice/.config/environment.d/90-repd-dev--git.conf")
+            .value()
+            .find("GIT_EDITOR=vim") != std::string::npos);
   auto again = f.build(module_with_files());
   f.check(again);
   for (auto& s : again) CHECK(s.check == CheckResult::Satisfied);
@@ -309,7 +315,7 @@ TEST_CASE("adoption guard: unmanaged different file is blocked; --adopt backs it
   f.check(steps);
   Step& hush = steps[2];
   CHECK(hush.check == CheckResult::Blocked);
-  CHECK(hush.summary.find("exists and is not managed by repro — re-run with --adopt") !=
+  CHECK(hush.summary.find("exists and is not managed by repd — re-run with --adopt") !=
         std::string::npos);
   auto e = blocked_error(hush, f.paths);
   CHECK(e.code == "E_BLOCKED");
@@ -325,7 +331,7 @@ TEST_CASE("adoption guard: unmanaged different file is blocked; --adopt backs it
   auto r = apply_step(adopted[2], a);
   REQUIRE(r);
   CHECK(r->adopted);
-  CHECK(r->backup == "/home/alice/.hushlogin.repro-adopted-20261009T120000Z");
+  CHECK(r->backup == "/home/alice/.hushlogin.repd-adopted-20261009T120000Z");
   CHECK(f.fs.read(r->backup).value() == "mine");
   CHECK(f.fs.read("/home/alice/.hushlogin").value() == "");
 }
@@ -373,8 +379,8 @@ TEST_CASE("locale: managed block keeps other content and is idempotent") {
   CHECK(g.active.contains("fr_FR.UTF-8 UTF-8"));
   const std::string out = render_locale_gen(g, {"de_DE.UTF-8 UTF-8", "en_US.UTF-8 UTF-8"});
   CHECK(out ==
-        "# comment\n#en_GB.UTF-8 UTF-8\nfr_FR.UTF-8 UTF-8\n# BEGIN repro\nde_DE.UTF-8 UTF-8\n"
-        "en_US.UTF-8 UTF-8\n# END repro\n");
+        "# comment\n#en_GB.UTF-8 UTF-8\nfr_FR.UTF-8 UTF-8\n# BEGIN repd\nde_DE.UTF-8 UTF-8\n"
+        "en_US.UTF-8 UTF-8\n# END repd\n");
   LocaleGen g2 = parse_locale_gen(out);
   CHECK(g2.has_block);
   CHECK(g2.block == std::vector<std::string>{"de_DE.UTF-8 UTF-8", "en_US.UTF-8 UTF-8"});
@@ -441,7 +447,7 @@ TEST_CASE("files: copying a directory manages each file in the tree") {
   CHECK(f.fs.lstat("/home/alice/.config/nvim/bin/fmt").mode == 0755);  // executable stays executable
   CHECK(f.fs.lstat("/home/alice/.config/nvim/init.lua").mode == 0644);
 
-  // Files nvim writes itself (lazy-lock.json) are not repro's business.
+  // Files nvim writes itself (lazy-lock.json) are not repd's business.
   f.fs.put_file("/home/alice/.config/nvim/lazy-lock.json", "{}");
   f.fs.put_file("/home/alice/.config/nvim/lua/opts.lua", "drift\n");
   f.fs.put_file("/cfg/modules/nvim/files/nvim/lua/plugins/ui.lua", "return { 'ui' }\n");
@@ -515,5 +521,5 @@ TEST_CASE("files: linking over an existing directory needs adoption, which moves
   CHECK(steps[0].summary == "~/.config/nvim  adopt existing directory (backup kept), then link -> modules/nvim/files/nvim");
   f.apply(steps[0]);
   CHECK(f.fs.readlink("/home/alice/.config/nvim").value() == "/cfg/modules/nvim/files/nvim");
-  CHECK(f.fs.lstat("/home/alice/.config/nvim.repro-adopted-20261009T120000Z").type == FileType::Dir);
+  CHECK(f.fs.lstat("/home/alice/.config/nvim.repd-adopted-20261009T120000Z").type == FileType::Dir);
 }

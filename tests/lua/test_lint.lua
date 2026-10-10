@@ -1,7 +1,7 @@
 -- Determinism lint (research R9): the bootstrap must not iterate tables with
 -- raw pairs() where order could leak into output. Each remaining pairs() call
 -- must carry an "-- order-insensitive" annotation on the same line.
--- Usage: repro-lua-test test_lint.lua <src/lua/repro dir>
+-- Usage: repd-lua-test test_lint.lua <src/lua/repd dir>
 local lu = require("luaunit")
 
 local DIR = assert(arg[1], "pass the bootstrap directory")

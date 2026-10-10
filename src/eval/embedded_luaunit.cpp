@@ -3,7 +3,7 @@
 
 #include "eval/embedded.hpp"
 
-namespace repro {
+namespace repd {
 namespace {
 
 #if defined(__clang__)
@@ -32,4 +32,4 @@ const std::array kFiles = {
 
 std::span<const EmbeddedFile> luaunit_files() { return kFiles; }
 
-}  // namespace repro
+}  // namespace repd

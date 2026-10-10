@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 
-namespace repro {
+namespace repd {
 
 // Error codes from the catalogue in contracts/cli.md.
 namespace ec {
@@ -66,4 +66,4 @@ void print_error(const Error& e);
 // Turns a "did you mean" candidate into hint text, or "" when there is none.
 std::string did_you_mean(std::string_view candidate);
 
-}  // namespace repro
+}  // namespace repd

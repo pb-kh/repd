@@ -2,14 +2,14 @@
 
 #include <format>
 
-namespace repro {
+namespace repd {
 
 Result<LockFile> read_lock(LuaHost& host, const Fs& fs, const ConfigRepository& repo) {
   LockFile lock;
   if (!fs.lstat(repo.lock).exists()) return lock;
   auto text = fs.read(repo.lock);
   if (!text) return std::unexpected(text.error());
-  auto v = host.call("lock_parse", {*text, "repro.lock.lua"});
+  auto v = host.call("lock_parse", {*text, "repd.lock.lua"});
   if (!v) return std::unexpected(v.error());
   for (const auto& [iface, e] : (*v)["providers"].as_map()) {
     lock.providers[iface] =
@@ -58,4 +58,4 @@ Status write_lock(LuaHost& host, Fs& fs, const ConfigRepository& repo, const Loc
   return {};
 }
 
-}  // namespace repro
+}  // namespace repd

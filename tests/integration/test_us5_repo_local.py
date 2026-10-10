@@ -1,10 +1,10 @@
 """US5 acceptance 4, 6: repo-local Lua backends are flagged reduced-trust;
 mutating calls while configuration is read are E_DECLARATIVE."""
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 
-class RepoLocal(ReproTestCase):
+class RepoLocal(RepdTestCase):
     fixture = "basic"
 
     def test_flagged_reduced_trust(self):
@@ -17,7 +17,7 @@ class RepoLocal(ReproTestCase):
 
     def test_backend_scratch_store_persists_between_runs(self):
         self.assertOk(self.sb.run("sync", "-u"))
-        mem = self.sb.home / ".local/state/repro/lua-backend-mem/fake.lua"
+        mem = self.sb.home / ".local/state/repd/lua-backend-mem/fake.lua"
         self.assertIn('ripgrep=true', mem.read_text())
         self.assertIn("summary: up to date", self.sb.run("sync", "-u").out)
 

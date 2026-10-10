@@ -1,10 +1,10 @@
-// Embeds src/lua/repro/*.lua. #embed is C23; GCC >= 15 and Clang >= 19 accept
+// Embeds src/lua/repd/*.lua. #embed is C23; GCC >= 15 and Clang >= 19 accept
 // it in C++ as an extension, so the pedantic diagnostic is silenced locally.
 #include "eval/embedded.hpp"
 
 #include <array>
 
-namespace repro {
+namespace repd {
 namespace {
 
 #if defined(__clang__)
@@ -18,34 +18,34 @@ namespace {
 #endif
 
 constexpr char kInit[] = {
-#embed "../lua/repro/init.lua"
+#embed "../lua/repd/init.lua"
 };
 constexpr char kErr[] = {
-#embed "../lua/repro/err.lua"
+#embed "../lua/repd/err.lua"
 };
 constexpr char kUtil[] = {
-#embed "../lua/repro/util.lua"
+#embed "../lua/repd/util.lua"
 };
 constexpr char kCanon[] = {
-#embed "../lua/repro/canon.lua"
+#embed "../lua/repd/canon.lua"
 };
 constexpr char kSandbox[] = {
-#embed "../lua/repro/sandbox.lua"
+#embed "../lua/repd/sandbox.lua"
 };
 constexpr char kBuilders[] = {
-#embed "../lua/repro/builders.lua"
+#embed "../lua/repd/builders.lua"
 };
 constexpr char kParams[] = {
-#embed "../lua/repro/params.lua"
+#embed "../lua/repd/params.lua"
 };
 constexpr char kMerge[] = {
-#embed "../lua/repro/merge.lua"
+#embed "../lua/repd/merge.lua"
 };
 constexpr char kLock[] = {
-#embed "../lua/repro/lock.lua"
+#embed "../lua/repd/lock.lua"
 };
 constexpr char kBackend[] = {
-#embed "../lua/repro/backend.lua"
+#embed "../lua/repd/backend.lua"
 };
 
 #if defined(__clang__)
@@ -57,20 +57,20 @@ constexpr char kBackend[] = {
 constexpr std::string_view view(const char* data, std::size_t n) { return {data, n}; }
 
 const std::array kFiles = {
-    EmbeddedFile{"repro", "repro/init.lua", view(kInit, sizeof kInit)},
-    EmbeddedFile{"repro.err", "repro/err.lua", view(kErr, sizeof kErr)},
-    EmbeddedFile{"repro.util", "repro/util.lua", view(kUtil, sizeof kUtil)},
-    EmbeddedFile{"repro.canon", "repro/canon.lua", view(kCanon, sizeof kCanon)},
-    EmbeddedFile{"repro.sandbox", "repro/sandbox.lua", view(kSandbox, sizeof kSandbox)},
-    EmbeddedFile{"repro.builders", "repro/builders.lua", view(kBuilders, sizeof kBuilders)},
-    EmbeddedFile{"repro.params", "repro/params.lua", view(kParams, sizeof kParams)},
-    EmbeddedFile{"repro.merge", "repro/merge.lua", view(kMerge, sizeof kMerge)},
-    EmbeddedFile{"repro.lock", "repro/lock.lua", view(kLock, sizeof kLock)},
-    EmbeddedFile{"repro.backend", "repro/backend.lua", view(kBackend, sizeof kBackend)},
+    EmbeddedFile{"repd", "repd/init.lua", view(kInit, sizeof kInit)},
+    EmbeddedFile{"repd.err", "repd/err.lua", view(kErr, sizeof kErr)},
+    EmbeddedFile{"repd.util", "repd/util.lua", view(kUtil, sizeof kUtil)},
+    EmbeddedFile{"repd.canon", "repd/canon.lua", view(kCanon, sizeof kCanon)},
+    EmbeddedFile{"repd.sandbox", "repd/sandbox.lua", view(kSandbox, sizeof kSandbox)},
+    EmbeddedFile{"repd.builders", "repd/builders.lua", view(kBuilders, sizeof kBuilders)},
+    EmbeddedFile{"repd.params", "repd/params.lua", view(kParams, sizeof kParams)},
+    EmbeddedFile{"repd.merge", "repd/merge.lua", view(kMerge, sizeof kMerge)},
+    EmbeddedFile{"repd.lock", "repd/lock.lua", view(kLock, sizeof kLock)},
+    EmbeddedFile{"repd.backend", "repd/backend.lua", view(kBackend, sizeof kBackend)},
 };
 
 }  // namespace
 
 std::span<const EmbeddedFile> bootstrap_files() { return kFiles; }
 
-}  // namespace repro
+}  // namespace repd

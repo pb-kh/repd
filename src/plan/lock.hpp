@@ -1,4 +1,4 @@
-// repro.lock.lua (contracts/lockfile.md): parsed and serialised by the Lua
+// repd.lock.lua (contracts/lockfile.md): parsed and serialised by the Lua
 // bootstrap (lock.lua); this wrapper reads, merges decisions and writes it
 // atomically, keeping the repository owner's uid/gid under sudo.
 #pragma once
@@ -6,14 +6,14 @@
 #include <map>
 #include <string>
 
-#include <repro/config.hpp>
+#include <repd/config.hpp>
 
 #include "eval/host.hpp"
 #include "plan/resolver.hpp"
 #include "platform/fs.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 struct LockFile {
   std::map<std::string, LockEntry> providers;
@@ -29,4 +29,4 @@ bool merge_decisions(LockFile& lock, const std::map<std::string, ResolvedProvide
 Result<std::string> render_lock(LuaHost& host, const LockFile& lock);
 Status write_lock(LuaHost& host, Fs& fs, const ConfigRepository& repo, const LockFile& lock);
 
-}  // namespace repro
+}  // namespace repd

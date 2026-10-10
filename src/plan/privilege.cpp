@@ -2,7 +2,7 @@
 
 #include <format>
 
-namespace repro {
+namespace repd {
 
 Result<Mode> file_privilege(const Paths& paths, const std::string& logical_dest,
                             const std::optional<std::string>& scope, const std::string& module) {
@@ -23,4 +23,4 @@ Mode service_privilege(const std::string& scope) {
 
 Mode action_privilege(const std::string& mode) { return mode == "system" ? Mode::System : Mode::User; }
 
-}  // namespace repro
+}  // namespace repd

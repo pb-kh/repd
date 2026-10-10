@@ -8,11 +8,11 @@
 #include "eval/declaration.hpp"
 #include "util/errors.hpp"
 
-namespace repro {
+namespace repd {
 
 bool can_prompt(bool yes);
 Result<std::string> prompt_provider(const std::string& iface,
                                     const std::vector<const ModuleMeta*>& candidates,
                                     const std::vector<std::string>& requirers);
 
-}  // namespace repro
+}  // namespace repd

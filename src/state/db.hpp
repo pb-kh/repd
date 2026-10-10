@@ -12,7 +12,7 @@
 struct sqlite3;
 struct sqlite3_stmt;
 
-namespace repro {
+namespace repd {
 
 class Stmt {
  public:
@@ -45,7 +45,7 @@ class Stmt {
 
 class Db {
  public:
-  static constexpr int kSchemaVersion = 1;
+  static constexpr int kSchemaVersion = 2;
   enum class Access { ReadWrite, ReadOnly };
 
   // ReadWrite creates the directory (0700) and file (0600) and migrates.
@@ -75,4 +75,4 @@ class Db {
   std::string path_;
 };
 
-}  // namespace repro
+}  // namespace repd

@@ -7,9 +7,9 @@
 #include "util/sha256.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
-// Inserts or replaces the `# BEGIN repro` … `# END repro` block, keeping the
+// Inserts or replaces the `# BEGIN repd` … `# END repd` block, keeping the
 // rest of the file (and its mode) as the user wrote it.
 Result<StepOutcome> apply_block(const Step& s, ApplyContext& ctx) {
   const auto& d = std::get<BlockDesired>(s.desired);
@@ -64,4 +64,4 @@ Result<StepOutcome> apply_file(const Step& s, ApplyContext& ctx) {
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

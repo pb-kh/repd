@@ -11,7 +11,7 @@
 #include "util/sha256.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 Result<StepOutcome> apply_locale(const Step& s, ApplyContext& ctx) {
   const auto& d = std::get<LocaleDesired>(s.desired);
@@ -76,4 +76,4 @@ Result<StepOutcome> apply_post(const Step& s, ApplyContext& ctx) {
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd

@@ -13,7 +13,7 @@
 #include "state/migrations.hpp"
 #include "util/strings.hpp"
 
-namespace repro {
+namespace repd {
 
 Stmt::~Stmt() {
   if (s_ != nullptr) sqlite3_finalize(s_);
@@ -116,9 +116,12 @@ Result<Db> Db::open(const std::string& path, Access access) {
     const int v = db.schema_version();
     if (v > kSchemaVersion) {
       return fail(ec::kSchema,
-                  std::format("state database {} has schema {}, this repro supports {}", path, v,
+                  std::format("state database {} has schema {}, this repd supports {}", path, v,
                               kSchemaVersion),
-                  "upgrade repro; downgrading the state store is not supported");
+                  "upgrade repd; downgrading the state store is not supported");
+    }
+    if (const auto compat = read_only_compat(v); !compat.empty()) {
+      if (auto r = db.exec(compat); !r) return std::unexpected(r.error());
     }
     return db;
   }
@@ -182,9 +185,9 @@ Status Db::migrate() {
   const int current = *has_meta ? schema_version() : 0;
   if (current > kSchemaVersion) {
     return fail(ec::kSchema,
-                std::format("state database {} has schema {}, this repro supports {}", path_,
+                std::format("state database {} has schema {}, this repd supports {}", path_,
                             current, kSchemaVersion),
-                "upgrade repro; downgrading the state store is not supported");
+                "upgrade repd; downgrading the state store is not supported");
   }
   if (current == kSchemaVersion) return {};
   if (auto r = exec("BEGIN IMMEDIATE"); !r) return r;
@@ -197,8 +200,8 @@ Status Db::migrate() {
   const std::string meta = std::format(
       "INSERT INTO meta(key, value) VALUES ('schema_version', '{0}') "
       "ON CONFLICT(key) DO UPDATE SET value = '{0}';"
-      "INSERT OR IGNORE INTO meta(key, value) VALUES ('created_by', 'repro {1}');",
-      kSchemaVersion, REPRO_VERSION);
+      "INSERT OR IGNORE INTO meta(key, value) VALUES ('created_by', 'repd {1}');",
+      kSchemaVersion, REPD_VERSION);
   if (auto r = exec(meta); !r) {
     (void)exec("ROLLBACK");
     return r;
@@ -206,4 +209,4 @@ Status Db::migrate() {
   return exec("COMMIT");
 }
 
-}  // namespace repro
+}  // namespace repd

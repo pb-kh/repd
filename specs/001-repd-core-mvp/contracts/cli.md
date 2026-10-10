@@ -1,4 +1,4 @@
-# Contract: `repro` command-line interface (v1)
+# Contract: `repd` command-line interface (v1)
 
 Stable user-facing surface (FR-023). Changes after release follow the
 constitution's versioning policy.
@@ -7,9 +7,9 @@ constitution's versioning policy.
 
 | Option | Meaning |
 |---|---|
-| `--config PATH` | Config repository root (overrides `REPRO_CONFIG`; default `${XDG_CONFIG_HOME:-~/.config}/repro` of the target user — `$SUDO_USER` under sudo) |
+| `--config PATH` | Config repository root (overrides `REPD_CONFIG`; default `${XDG_CONFIG_HOME:-~/.config}/repd` of the target user — `$SUDO_USER` under sudo) |
 | `--no-color` | Disable color (also `NO_COLOR` env; color only on TTY otherwise) |
-| `-h, --help`, `--version` | `--version` prints `repro <semver> (lua-api <N>, plugin-abi <N>, luajit <commit>, sqlite <ver>)` |
+| `-h, --help`, `--version` | `--version` prints `repd <semver> (lua-api <N>, plugin-abi <N>, luajit <commit>, sqlite <ver>)` |
 
 Mode flags where accepted: `-u/--user` (default for read-only commands) and
 `-s/--system`. `sync` **requires** exactly one of them.
@@ -17,24 +17,24 @@ Mode flags where accepted: `-u/--user` (default for read-only commands) and
 ## Commands
 
 ```
-repro init [--dir PATH] [--force]
-repro list modules|interfaces|profiles|providers|plugins [--profile NAME]
-repro show MODULE [--profile NAME]
-repro sync (-u|-s) [MODULE ...] [--profile NAME] [--dry-run] [--yes]
+repd init [--dir PATH] [--force]
+repd list modules|interfaces|profiles|providers|plugins [--profile NAME]
+repd show MODULE [--profile NAME]
+repd sync (-u|-s) [MODULE ...] [--profile NAME] [--dry-run] [--yes]
            [--adopt] [--refresh MODULE ...] [--provider IFACE=MODULE ...]
            [--reselect IFACE ...] [--option KEY=VALUE ...] [--upgrade]
-repro status [-u|-s] [--profile NAME]
-repro journal [-u|-s] [--last N] [--run ID]
-repro plugins list
+repd status [-u|-s] [--profile NAME]
+repd journal [-u|-s] [--last N] [--run ID]
+repd plugins list
 ```
 
-(`repro plugins list` ≡ `repro list plugins`.)
+(`repd plugins list` ≡ `repd list plugins`.)
 
 ### `init`
-Creates, in `--dir` (default: config path), `repro.lua` (one default profile
+Creates, in `--dir` (default: config path), `repd.lua` (one default profile
 `main` using `base`), `modules/base/init.lua` (an example `env` + `files`
 entry) with its source `modules/base/files/example.conf`, `plugins/lua/`, and
-`.gitignore`. Refuses if `repro.lua` exists unless `--force` (never deletes
+`.gitignore`. Refuses if `repd.lua` exists unless `--force` (never deletes
 other files). Exit 0/2.
 
 ### `list`
@@ -77,12 +77,12 @@ Pipeline: discover → eval → resolve → plan → preview or apply.
   `integrations` touching the run (`active`, `inactive, needs …`, or held by
   `auto_sync = false`).
 - `--option K=V` (repeatable; also on `status` and `show`): overrides
-  `rp.option(K, V)` from repro.lua for this run. K is a core option
+  `rp.option(K, V)` from repd.lua for this run. K is a core option
   (`packages.default_backend`, `services.backend`, `env.targets` as a comma list) or
   one an installed add-on declares (e.g. `yay.review`); an unknown key or a
   value outside the declared ones is `E_CONFIG` (with a did-you-mean), a flag
   without `=` is `E_USAGE`.
-- `-s` without effective root → exit 2: `repro sync -s needs root; run: sudo repro sync -s`.
+- `-s` without effective root → exit 2: `repd sync -s needs root; run: sudo repd sync -s`.
 - Without `--dry-run`, the plan is printed first, then applied; there is no
   confirmation prompt in v1 (preview is the explicit `--dry-run`).
 
@@ -90,8 +90,8 @@ Pipeline: discover → eval → resolve → plan → preview or apply.
 Table per module in the selected scope: `MODULE  STATUS  LAST-RUN` for the
 chosen mode (default `-u`); STATUS is `applied|stale|pending|failed` and
 LAST-RUN is `#<run id> <UTC time>` or `-`. Also prints one line for the other
-mode: `system: N pending (M modules) — run: sudo repro sync -s` if its store is
-readable, else `system: unavailable (run: sudo repro status -s)`.
+mode: `system: N pending (M modules) — run: sudo repd sync -s` if its store is
+readable, else `system: unavailable (run: sudo repd status -s)`.
 
 ### `journal`
 Most recent runs first (`--last N`, default 5) or a single run (`--run ID`):
@@ -103,7 +103,7 @@ whose plan fails is journaled with outcome `plan-error` and no steps.
 ## Preview / plan output format (byte-stable, SC-003)
 
 ```
-repro plan — mode: user — profile: laptop
+repd plan — mode: user — profile: laptop
 providers:
   dev/ide = dev/ide/vim (lock)
 backends:
@@ -113,12 +113,12 @@ modules (4):
   dev/git              1 change
     + files   ~/.gitconfig  link -> modules/dev/git/files/gitconfig
   dev/ide/vim          2 changes, 1 for system pass
-    + env     EDITOR=nvim  (~/.config/fish/conf.d/repro-dev--ide--vim.fish)
+    + env     EDITOR=nvim  (~/.config/fish/conf.d/repd-dev--ide--vim.fish)
     ~ files   ~/.config/nvim/init.lua  update (content differs)
     · packages install neovim, ripgrep  [system pass]
   dev/rust             1 change
     + action  install rustup  [imperative]
-summary: 4 changes in this pass, 1 pending for system pass (run: sudo repro sync -s)
+summary: 4 changes in this pass, 1 pending for system pass (run: sudo repd sync -s)
 ```
 
 Rules:
@@ -128,7 +128,7 @@ Rules:
 - `~` is rendered literally for paths under the target home; no timestamps,
   PIDs, run ids, or durations appear in the plan section.
 - Blocked steps print the reason and the remedy:
-  `! files ~/.bashrc  exists and is not managed by repro — re-run with --adopt or set adopt = true`.
+  `! files ~/.bashrc  exists and is not managed by repd — re-run with --adopt or set adopt = true`.
 
 Apply then appends result lines `ok|skip|FAIL  step_id` and a final summary:
 `done: N applied[ (K adopted, backups kept)][; P pending for <other> pass (run: …)]`,
@@ -172,7 +172,7 @@ code is unaffected.
 
 | Var | Effect |
 |---|---|
-| `REPRO_CONFIG` | Config repo path |
+| `REPD_CONFIG` | Config repo path |
 | `NO_COLOR` | Disable color |
 | `XDG_CONFIG_HOME`, `XDG_STATE_HOME` | Standard locations |
-| `REPRO_SYSROOT`, `REPRO_TEST_ASSUME_ROOT` | **Test builds only** (`-Dtest_hooks=true`); ignored otherwise |
+| `REPD_SYSROOT`, `REPD_TEST_ASSUME_ROOT` | **Test builds only** (`-Dtest_hooks=true`); ignored otherwise |

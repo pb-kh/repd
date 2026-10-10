@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-namespace repro {
+namespace repd {
 
 ModuleMeta ModuleMeta::from_value(const Value& v) {
   ModuleMeta m;
@@ -119,4 +119,4 @@ RootConfig RootConfig::from_value(const Value& v) {
   return c;
 }
 
-}  // namespace repro
+}  // namespace repd

@@ -1,4 +1,4 @@
-"""The repro-pacman add-on (librepro-pacman.so) against a stub pacman.
+"""The repd-pacman add-on (librepd-pacman.so) against a stub pacman.
 
 Installs never refresh the databases. `--upgrade` alone is a full `-Syu`;
 `--upgrade MODULE…` upgrades single packages after a refresh, a partial
@@ -8,7 +8,7 @@ upgrade, so it needs pacman.partial = "allow".
 import os
 import shutil
 
-from conftest import ReproTestCase, main
+from conftest import RepdTestCase, main
 
 PACMAN = r"""#!/bin/sh
 S="$PACMAN_STUB"
@@ -28,13 +28,13 @@ esac
 PROFILE = 'rp.profile { name = "main", default = true, use = { "dev/rust", "base" } }\n'
 
 
-class Pacman(ReproTestCase):
+class Pacman(RepdTestCase):
     def setUp(self):
         super().setUp()
-        plugin = os.environ.get("REPRO_PACMAN_PLUGIN")
+        plugin = os.environ.get("REPD_PACMAN_PLUGIN")
         if not plugin:
             self.skipTest("built with -Daddons=disabled")
-        shutil.copy(plugin, self.sb.plugin_dir() / "librepro-pacman.so")
+        shutil.copy(plugin, self.sb.plugin_dir() / "librepd-pacman.so")
         self.state = self.sb.tmp / "pacman"
         bin_dir = self.sb.tmp / "bin"
         self.state.mkdir()
@@ -44,7 +44,7 @@ class Pacman(ReproTestCase):
         stub.chmod(0o755)
         self.sb.env["PATH"] = f"{bin_dir}:{self.sb.env['PATH']}"
         self.sb.env["PACMAN_STUB"] = str(self.state)
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "pacman")\n' + PROFILE)
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "pacman")\n' + PROFILE)
         self.sb.write("modules/dev/rust.lua", 'return rp.module { packages = { "rustup", "sccache" } }')
         self.sb.write("modules/base.lua", 'return rp.module { packages = { "git" } }')
         (self.state / "installed").write_text("rustup\ngit\n")
@@ -71,7 +71,7 @@ class Pacman(ReproTestCase):
         self.assertOk(r)
         self.assertIn('warning: --upgrade: pacman: pacman.partial is "refuse": refreshing the databases to '
                       "upgrade single packages is a partial upgrade; skipped rustup, sccache", r.err)
-        self.assertIn("hint: upgrade everything (repro sync --upgrade, without modules), or allow it: "
+        self.assertIn("hint: upgrade everything (repd sync --upgrade, without modules), or allow it: "
                       "--option pacman.partial=allow", r.err)
         self.assertNotIn("upgrade pacman", r.out)
         self.assertFalse([l for l in self.log() if l.startswith("pacman -Sy")])
@@ -86,8 +86,8 @@ class Pacman(ReproTestCase):
         self.assertLess(self.log().index(refreshes[0]),
                         self.log().index("pacman -S --needed --noconfirm -- sccache"))
 
-    def test_partial_option_in_repro_lua(self):
-        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "pacman")\n'
+    def test_partial_option_in_repd_lua(self):
+        self.sb.write("repd.lua", 'rp.option("packages.default_backend", "pacman")\n'
                       'rp.option("pacman.partial", "allow")\n' + PROFILE)
         r = self.sb.run("sync", "-s", "--upgrade", "dev/rust", "base", "--dry-run", root=True)
         self.assertOk(r)

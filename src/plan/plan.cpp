@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace repro {
+namespace repd {
 
 std::string_view to_string(StepClass c) {
   switch (c) {
@@ -58,4 +58,4 @@ std::vector<std::string> PackagesDesired::missing_owners() const {
   return out;
 }
 
-}  // namespace repro
+}  // namespace repd
