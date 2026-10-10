@@ -26,11 +26,11 @@ struct BuildContext {
   std::vector<std::string> all_locales;          // union over the selected scope
   EnvTargets env_targets;                        // where env / system_env are written
   std::string env_hook_owner;                    // module that owns the sh profile block
-  std::string default_package_backend;           // rp.option("packages.backend"), "" if unset
+  std::string default_package_backend;  // rp.option("packages.default_backend"), "" if unset
 };
 
 // A `packages` entry: "yay:neovim" names its backend; "neovim" uses the default
-// backend from rp.option("packages.backend"), if any (backend "" otherwise).
+// backend from rp.option("packages.default_backend"), if any (backend "" otherwise).
 struct PackageRef {
   std::string backend;
   std::string name;

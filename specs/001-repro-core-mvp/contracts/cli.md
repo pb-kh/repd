@@ -78,7 +78,7 @@ Pipeline: discover → eval → resolve → plan → preview or apply.
   `auto_sync = false`).
 - `--option K=V` (repeatable; also on `status` and `show`): overrides
   `rp.option(K, V)` from repro.lua for this run. K is a core option
-  (`packages.backend`, `services.backend`, `env.targets` as a comma list) or
+  (`packages.default_backend`, `services.backend`, `env.targets` as a comma list) or
   one an installed add-on declares (e.g. `yay.review`); an unknown key or a
   value outside the declared ones is `E_CONFIG` (with a did-you-mean), a flag
   without `=` is `E_USAGE`.

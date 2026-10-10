@@ -35,7 +35,7 @@ struct Plan {
   std::vector<IntegrationStatus> integrations;
   std::map<std::string, ResolvedProvider> providers;
   std::map<std::string, BackendChoice> backends;  // "packages:<name>" (one per used backend), "services"
-  std::string package_default;                    // rp.option("packages.backend"), "" if unset
+  std::string package_default;  // rp.option("packages.default_backend"), "" if unset
   std::map<std::string, ResolvedModule> modules;
   std::map<std::string, std::string> fingerprints;
   std::vector<Step> steps;  // grouped by module in `selected` order

@@ -86,8 +86,10 @@ std::string default_package_backend(const std::string& option) {
 Error package_without_backend(const std::string& who, const std::string& entry,
                               const std::vector<std::string>& available) {
   const std::string example = available.empty() ? "<backend>" : available.front();
-  std::string hint = std::format("write \"{}:{}\", or set a default in repro.lua: rp.option(\"packages.backend\", \"{}\")",
-                                 example, entry, example);
+  std::string hint = std::format(
+      "write \"{}:{}\", or set a default in repro.lua: rp.option(\"packages.default_backend\", "
+      "\"{}\")",
+      example, entry, example);
   if (!available.empty()) hint += std::format(" (installed packages backends: {})", join(available, ", "));
   return Error{std::string(ec::kConfig), std::format("{}: package {} names no backend, and no default is set", who, entry),
                std::move(hint)};

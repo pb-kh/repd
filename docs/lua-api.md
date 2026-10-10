@@ -64,13 +64,13 @@ These builders may only be called from `repro.lua`.
 
 | Key | Values |
 |---|---|
-| `"packages.backend"` | the default backend for unprefixed `packages` entries (e.g. `"pacman"`). Unset by default, and there is no `"auto"`: without it every package needs a `backend:` prefix |
+| `"packages.default_backend"` | the default backend for unprefixed `packages` entries (e.g. `"pacman"`). Unset by default, and there is no `"auto"`: without it every package needs a `backend:` prefix |
 | `"<add-on>.<name>"` | options declared by installed add-ons, e.g. `"yay.review"`. Values are checked against the add-on's list; a key for an add-on that is not installed on this machine is ignored, so one repository serves machines with different add-ons |
 | `"services.backend"` | `"auto"` (default: the first usable backend, ranked system add-ons > user add-ons > repo Lua backends, then by name) or a backend name |
 | `"env.targets"` | `"auto"` (default) or a list of `"sh"`, `"fish"`, `"environment.d"` — see [Environment variables](#environment-variables) |
 
 ```lua
-rp.option("packages.backend", "pacman")
+rp.option("packages.default_backend", "pacman")
 rp.option("env.targets", { "fish", "sh" })
 ```
 
@@ -79,7 +79,7 @@ prefix, and unprefixed entries go to the default backend set above. A module
 may mix backends; each gets its own step, run in that backend's pass:
 
 ```lua
-rp.option("packages.backend", "pacman")          -- repro.lua
+rp.option("packages.default_backend", "pacman")          -- repro.lua
 -- in a module:
 packages = { "neovim", "yay:paru-bin", "flatpak:org.mozilla.firefox" }
 ```

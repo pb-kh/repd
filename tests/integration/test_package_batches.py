@@ -13,7 +13,7 @@ class PackageBatches(ReproTestCase):
     def setUp(self):
         super().setUp()
         self.sb.add_plugin("fake-packages.lua")
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "fake")\n'
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "fake")\n'
                       'rp.profile { name = "main", default = true, use = { "a", "b", "c" } }\n')
         self.sb.write("modules/dev/c++.lua", "return rp.module { }")
         self.sb.write("modules/a.lua", 'return rp.module { packages = { "git", "vim" } }')

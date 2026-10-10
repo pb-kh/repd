@@ -34,7 +34,7 @@ std::string Session::option(const std::string& key) const {
 }
 
 Result<Value> Session::dispatch_packages(const std::string& op, const List& args) {
-  const std::string def = default_package_backend(option("packages.backend"));
+  const std::string def = default_package_backend(option("packages.default_backend"));
   auto backend = [&](const std::string& name) -> Result<Backend*> {
     if (Backend* b = backends.find("packages", name)) return b;
     return std::unexpected(BackendRegistry::missing_named("packages", name, "rp.packages", backends.names("packages"), paths));
@@ -42,7 +42,7 @@ Result<Value> Session::dispatch_packages(const std::string& op, const List& args
   if (op == "refresh") {
     if (def.empty()) {
       return fail(ec::kConfig, "rp.packages.refresh() needs a default packages backend",
-                  "set rp.option(\"packages.backend\", \"<backend>\") in repro.lua");
+                  "set rp.option(\"packages.default_backend\", \"<backend>\") in repro.lua");
     }
     auto b = backend(def);
     if (!b) return std::unexpected(b.error());
@@ -78,7 +78,8 @@ Result<Value> Session::dispatch_packages(const std::string& op, const List& args
 
 namespace {
 
-const std::vector<std::string> kCoreOptions = {"packages.backend", "services.backend", "env.targets"};
+const std::vector<std::string> kCoreOptions = {"packages.default_backend", "services.backend",
+                                               "env.targets"};
 
 }  // namespace
 
@@ -93,9 +94,12 @@ Status Session::apply_options() {
   auto check = [&](const std::string& key, const std::string& value, bool from_flag) -> Status {
     const std::string where = from_flag ? "--option" : "repro.lua";
     if (std::ranges::find(kCoreOptions, key) != kCoreOptions.end()) {
-      if (key == "packages.backend" && (value.empty() || value == "auto")) {
-        return fail(ec::kConfig, std::format("{}: packages.backend needs a backend name (it has no \"auto\")", where),
-                    "e.g. --option packages.backend=pacman");
+      if (key == "packages.default_backend" && (value.empty() || value == "auto")) {
+        return fail(
+            ec::kConfig,
+            std::format("{}: packages.default_backend needs a backend name (it has no \"auto\")",
+                        where),
+            "e.g. --option packages.default_backend=pacman");
       }
       return {};
     }
@@ -107,6 +111,12 @@ Status Session::apply_options() {
     const std::string prefix = key.substr(0, key.find('.'));
     const bool addon_present = std::ranges::any_of(backends.all(), [&](const Backend* b) { return b->info().name == prefix; });
     if (!from_flag && !addon_present) return {};
+    if (key == "packages.backend") {
+      return fail(
+          ec::kConfig,
+          std::format("{}: option packages.backend was renamed to packages.default_backend", where),
+          std::format("--option packages.default_backend={}", value));
+    }
     std::string hint = closest_match(key, known);
     hint = hint.empty() ? std::format("known options: {}", join(known, ", ")) : std::format("did you mean '{}'?", hint);
     return fail(ec::kConfig, std::format("{}: unknown option '{}'", where, key), std::move(hint));
@@ -488,8 +498,8 @@ Result<PlanOutput> make_plan(Session& s, const PlanRequest& req, const Ledger* l
   for (const auto& name : plan.selected) resolved.push_back(&plan.modules.at(name));
 
   // Packages: each entry names its backend ("yay:neovim") or uses the default
-  // one from rp.option("packages.backend"); there is no automatic choice.
-  plan.package_default = default_package_backend(s.option("packages.backend"));
+  // one from rp.option("packages.default_backend"); there is no automatic choice.
+  plan.package_default = default_package_backend(s.option("packages.default_backend"));
   std::map<std::string, std::vector<std::string>> package_users;  // backend -> modules
   for (const auto* m : resolved) {
     for (const auto& entry : m->packages) {

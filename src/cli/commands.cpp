@@ -535,7 +535,7 @@ int cmd_show(const GlobalOptions& g, const std::string& module, const std::optio
   }
   // Each packages backend the module names; one that is not installed is shown
   // as a system-pass step, which is where most package managers run.
-  const std::string pkg_default = default_package_backend(s.option("packages.backend"));
+  const std::string pkg_default = default_package_backend(s.option("packages.default_backend"));
   std::map<std::string, Mode> pkg_backends;
   for (const auto& entry : resolved->packages) {
     const std::string name = split_package(entry, pkg_default).backend;

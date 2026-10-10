@@ -26,7 +26,7 @@ symbol (e.g. `module`, `packages`) the message suggests it.
 ## Root config builders (`repro.lua` only)
 
 ```lua
-rp.option(key, value)          -- key ∈ {"packages.backend","services.backend"}; value "auto" | backend name
+rp.option(key, value)          -- key ∈ {"packages.default_backend","services.backend"}; value "auto" | backend name
 rp.pin(interface, module)      -- repo-wide provider pin (precedence level 3)
 rp.profile { name=, description=?, default=?, use={...}, providers=? }
 ```

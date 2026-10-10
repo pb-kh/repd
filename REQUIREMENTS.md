@@ -220,7 +220,7 @@ idempotent: apply = ensure the target state; already-correct state is a no-op.
 
 - **FR-B-1** Pluggable namespaces in v1: `packages`, `services`.
   `rp.packages` / `rp.services` are facades delegating to the active backend.
-- **FR-B-2** Options select the backend: `rp.option("packages.backend", "auto")`;
+- **FR-B-2** Options select the backend: `rp.option("packages.default_backend", "auto")`;
   `auto` = detect by presence on the system (pacman → systemd etc.). Unknown
   option names error.
 - **FR-B-3** Backend sources:
@@ -367,7 +367,7 @@ proposals, shapes are normative).
 
 ```lua
 -- ~/.config/repro/repro.lua
-rp.option("packages.backend", "auto")        -- or "pacman", "nix", ...
+rp.option("packages.default_backend", "auto")        -- or "pacman", "nix", ...
 rp.option("services.backend", "auto")        -- "systemd", "openrc"
 
 rp.profile {

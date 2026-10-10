@@ -44,7 +44,7 @@ class Pacman(ReproTestCase):
         stub.chmod(0o755)
         self.sb.env["PATH"] = f"{bin_dir}:{self.sb.env['PATH']}"
         self.sb.env["PACMAN_STUB"] = str(self.state)
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "pacman")\n' + PROFILE)
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "pacman")\n' + PROFILE)
         self.sb.write("modules/dev/rust.lua", 'return rp.module { packages = { "rustup", "sccache" } }')
         self.sb.write("modules/base.lua", 'return rp.module { packages = { "git" } }')
         (self.state / "installed").write_text("rustup\ngit\n")
@@ -87,7 +87,7 @@ class Pacman(ReproTestCase):
                         self.log().index("pacman -S --needed --noconfirm -- sccache"))
 
     def test_partial_option_in_repro_lua(self):
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "pacman")\n'
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "pacman")\n'
                       'rp.option("pacman.partial", "allow")\n' + PROFILE)
         r = self.sb.run("sync", "-s", "--upgrade", "dev/rust", "base", "--dry-run", root=True)
         self.assertOk(r)

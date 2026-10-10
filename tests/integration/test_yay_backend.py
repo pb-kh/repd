@@ -58,7 +58,7 @@ esac
 
 PROFILE = 'rp.profile { name = "main", default = true, use = { "aur" } }\n'
 # Most tests skip the PKGBUILD review so they can run without a terminal.
-REPRO_LUA = 'rp.option("packages.backend", "yay")\nrp.option("yay.review", "skip")\n' + PROFILE
+REPRO_LUA = 'rp.option("packages.default_backend", "yay")\nrp.option("yay.review", "skip")\n' + PROFILE
 
 YAY_ARGS = "--needed --noconfirm --answerclean None --answerdiff None --answeredit None --sudoloop --"
 REVIEW_ARGS = "--needed --diffmenu --noanswerdiff --answerclean None --answeredit None --sudoloop --"
@@ -188,7 +188,7 @@ class Yay(ReproTestCase):
 
     def test_review_is_the_default_and_needs_a_terminal(self):
         (self.state / "cached").touch()
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "yay")\n' + PROFILE)
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "yay")\n' + PROFILE)
         r = self.sb.run("sync", "-u")
         self.assertError(r, "E_STEP", exit_code=1)
         self.assertIn('yay.review is "diff": yay shows AUR build scripts and asks before building', r.err)
@@ -198,7 +198,7 @@ class Yay(ReproTestCase):
 
     def test_review_runs_yay_with_its_diff_menu_on_the_terminal(self):
         (self.state / "cached").touch()
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "yay")\n' + PROFILE)
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "yay")\n' + PROFILE)
         code, transcript = self.run_on_terminal(None)
         self.assertEqual(code, 0, transcript)
         self.assertIn(f"yay -S {REVIEW_ARGS} neovim paru-bin", self.log())
@@ -207,7 +207,7 @@ class Yay(ReproTestCase):
     def test_option_flag_overrides_repro_lua(self):
         (self.state / "cached").touch()
         self.sb.write("repro.lua", 'rp.option("yay.review", "diff")\n' + PROFILE)
-        r = self.sb.run("sync", "-u", "--option", "packages.backend=yay", "--option", "yay.review=skip")
+        r = self.sb.run("sync", "-u", "--option", "packages.default_backend=yay", "--option", "yay.review=skip")
         self.assertOk(r)
         self.assertIn(f"yay -S {YAY_ARGS} neovim paru-bin", self.log())
 
@@ -223,8 +223,12 @@ class Yay(ReproTestCase):
         r = self.sb.run("sync", "-u", "--option", "yay.review")
         self.assertError(r, "E_USAGE")
         self.assertIn("--option expects KEY=VALUE", r.err)
-        r = self.sb.run("sync", "-u", "--option", "packages.backend=auto")
+        r = self.sb.run("sync", "-u", "--option", "packages.default_backend=auto")
         self.assertError(r, "E_CONFIG")
+        r = self.sb.run("sync", "-u", "--option", "packages.backend=yay")
+        self.assertError(r, "E_CONFIG")
+        self.assertIn("packages.backend was renamed to packages.default_backend", r.err)
+        self.assertIn("--option packages.default_backend=yay", r.err)
 
     def test_repro_lua_options_of_absent_addons_are_ignored(self):
         (self.state / "cached").touch()

@@ -29,7 +29,7 @@ Three layers of data exist:
 
 | Field | Type | Rule |
 |---|---|---|
-| options | map<string, scalar> | known keys only: `packages.backend` (default backend for unprefixed packages; a backend name, no `"auto"`), `services.backend` (`"auto"` or backend name), `env.targets`. Unknown key → E_CONFIG with closest match. |
+| options | map<string, scalar> | known keys only: `packages.default_backend` (default backend for unprefixed packages; a backend name, no `"auto"`), `services.backend` (`"auto"` or backend name), `env.targets`. Unknown key → E_CONFIG with closest match. |
 | providers | map<iface, module> | repo-wide pins (`rp.pin(iface, module)`), precedence level 3 |
 | profiles | list<Profile> | names unique; ≤ 1 with `default = true` |
 

@@ -88,7 +88,7 @@ class Backends(ReproTestCase):
 
     def test_upgrade_with_modules_upgrades_only_their_installed_packages(self):
         self.sb.write("modules/dev/go.lua", 'return rp.module { packages = { "go" } }')
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "fake")\n'
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "fake")\n'
                       'rp.profile { name = "main", default = true, use = { "dev/c++", "dev/go" } }\n')
         self.sb.write("modules/dev/c++.lua", 'return rp.module { packages = { "clang" } }')
         self.assertOk(self.sb.run("sync", "-u"))
@@ -140,7 +140,7 @@ class Backends(ReproTestCase):
     def test_backend_option_selects_by_name(self):
         d = self.sb.plugin_dir()
         shutil.copy(os.environ["REPRO_NATIVE_PLUGIN"], d / "librepro-native.so")
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "native-fake")\n'
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "native-fake")\n'
                       'rp.profile { name = "main", default = true, use = { "dev/c++" } }\n')
         r = self.sb.run("sync", "-u", "--dry-run")
         self.assertOk(r)

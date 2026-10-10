@@ -157,7 +157,7 @@ TEST_CASE("eval: mutating facade during evaluation is E_DECLARATIVE") {
 TEST_CASE("eval: root config profiles, pins and options") {
   Harness h;
   h.repo.write("repro.lua", R"(
-    rp.option("packages.backend", "pacman")
+    rp.option("packages.default_backend", "pacman")
     rp.option("services.backend", "auto")
     rp.pin("dev/ide", "dev/ide/vim")
     rp.profile { name = "laptop", default = true, use = { "base", { "dev/git", params = { email = "x@y" } } } }
@@ -165,7 +165,7 @@ TEST_CASE("eval: root config profiles, pins and options") {
   )");
   auto root = h.eval.load_root();
   REQUIRE(root);
-  CHECK(root->options.at("packages.backend") == "pacman");
+  CHECK(root->options.at("packages.default_backend") == "pacman");
   CHECK(root->options.at("services.backend") == "auto");
   CHECK(root->pins.at("dev/ide") == "dev/ide/vim");
   REQUIRE(root->profiles.size() == 2);
@@ -177,11 +177,17 @@ TEST_CASE("eval: root config profiles, pins and options") {
 
 TEST_CASE("eval: packages have no automatic backend; entries are name or backend:name") {
   Harness h;
-  h.repo.write("repro.lua", "rp.option('packages.backend', 'auto')");
+  h.repo.write("repro.lua", "rp.option('packages.default_backend', 'auto')");
   auto root = h.eval.load_root();
   REQUIRE_FALSE(root);
-  CHECK(root.error().message.find("packages.backend has no \"auto\"") != std::string::npos);
+  CHECK(root.error().message.find("packages.default_backend has no \"auto\"") != std::string::npos);
   CHECK(root.error().hint.find("\"yay:neovim\"") != std::string::npos);
+
+  h.repo.write("repro.lua", "rp.option('packages.backend', 'pacman')");
+  root = h.eval.load_root();
+  REQUIRE_FALSE(root);
+  CHECK(root.error().message.find("renamed to packages.default_backend") != std::string::npos);
+  CHECK(root.error().hint == "rp.option(\"packages.default_backend\", \"pacman\")");
 
   h.repo.write("repro.lua", "");
   h.repo.write("modules/ok.lua", "return rp.module { packages = { 'neovim', 'flatpak:org.mozilla.firefox' } }");
@@ -202,7 +208,7 @@ TEST_CASE("eval: root config errors") {
   h.repo.write("repro.lua", "rp.option('packages.backnd', 'auto')");
   auto root = h.eval.load_root();
   REQUIRE_FALSE(root);
-  CHECK(root.error().hint.find("packages.backend") != std::string::npos);
+  CHECK(root.error().hint.find("packages.default_backend") != std::string::npos);
 
   h.repo.write("repro.lua",
                "rp.profile { name = 'a', default = true, use = { 'x' } }\n"

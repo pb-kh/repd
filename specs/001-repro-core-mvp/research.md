@@ -298,7 +298,7 @@ decision deviates from REQUIREMENTS.md, the deviation is called out explicitly.
   `addons/yay` (packages, user privilege, AUR) runs yay on the terminal through
   the host's `exec_tty` so sudo can prompt for a password.
   Packages are routed per entry, not by one selected backend: `"backend:name"`,
-  or the default from `rp.option("packages.backend")`, which has no `auto`.
+  or the default from `rp.option("packages.default_backend")`, which has no `auto`.
   One packages step per (module, backend), id `<module>/packages/<backend>`.
   Installs no longer refresh first (`-Sy` + `-S` is a partial upgrade);
   `repro sync --upgrade` plans an `upgrade` step per backend via the optional

@@ -10,7 +10,7 @@ class MissingBackend(ReproTestCase):
     fixture = "needs-pkgs"
 
     def use_pacman(self):
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "pacman")\n'
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "pacman")\n'
                       'rp.profile { name = "main", default = true, use = { "dev/c++" } }\n')
 
     def test_names_the_addon(self):
@@ -36,7 +36,7 @@ class MissingBackend(ReproTestCase):
         r = self.sb.run("sync", "-u", "--dry-run")
         self.assertError(r, "E_CONFIG")
         self.assertIn("module dev/c++: package clang names no backend, and no default is set", r.err)
-        self.assertIn('write "fake:clang", or set a default in repro.lua: rp.option("packages.backend", "fake")', r.err)
+        self.assertIn('write "fake:clang", or set a default in repro.lua: rp.option("packages.default_backend", "fake")', r.err)
 
     def test_pacman_on_the_system_suggests_pacman_install(self):
         self.use_pacman()

@@ -33,7 +33,7 @@ local ACTION_FIELDS = { "name", "mode", "check", "run" }
 local PARAM_FIELDS = { "default", "type", "one_of", "description" }
 local PROFILE_FIELDS = { "name", "description", "default", "use", "providers" }
 local BACKEND_FIELDS = { "namespace", "name", "privilege", "ops" }
-M.OPTION_KEYS = { "packages.backend", "services.backend", "env.targets" }
+M.OPTION_KEYS = { "packages.default_backend", "services.backend", "env.targets" }
 M.ENV_TARGETS = { "sh", "fish", "environment.d" }
 
 M.MODULE_NAME_PATTERN = "^[a-z0-9_+-]+$"
@@ -381,6 +381,10 @@ function M.option(key, value)
     c.options[key] = value
     return
   end
+  if key == "packages.backend" then
+    err.raise("E_CONFIG", "option packages.backend was renamed to packages.default_backend",
+      "rp.option(\"packages.default_backend\", " .. string.format("%q", tostring(value)) .. ")")
+  end
   if not valid[key] then
     err.raise("E_CONFIG", "unknown option '" .. tostring(key) .. "'",
       util.did_you_mean(tostring(key), M.OPTION_KEYS) or ("valid options: " .. table.concat(M.OPTION_KEYS, ", ")))
@@ -399,10 +403,10 @@ function M.option(key, value)
     return
   end
   expect_type(value, "string", "option " .. key, "use \"auto\" or a backend name")
-  if key == "packages.backend" and value == "auto" then
+  if key == "packages.default_backend" and value == "auto" then
     -- Packages are routed explicitly: "yay:neovim", or this default.
-    err.raise("E_CONFIG", "packages.backend has no \"auto\": it names the default backend for unprefixed packages",
-      "e.g. rp.option(\"packages.backend\", \"pacman\"), or prefix each package: \"yay:neovim\"")
+    err.raise("E_CONFIG", "packages.default_backend has no \"auto\": it names the default backend for unprefixed packages",
+      "e.g. rp.option(\"packages.default_backend\", \"pacman\"), or prefix each package: \"yay:neovim\"")
   end
   c.options[key] = value
 end

@@ -100,7 +100,7 @@ class Flatpak(ReproTestCase):
         self.assertNotIn("flatpak install", self.log())
 
     def test_default_backend(self):
-        self.sb.write("repro.lua", 'rp.option("packages.backend", "flatpak-user")\n' + PROFILE)
+        self.sb.write("repro.lua", 'rp.option("packages.default_backend", "flatpak-user")\n' + PROFILE)
         self.packages("org.mozilla.firefox")
         r = self.sb.run("sync", "-u")
         self.assertOk(r)
